@@ -1,0 +1,3225 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Live Score & Bracket | 2 CAHAYA DIGITAL SCORING</title>
+    
+    <!-- Tailwind CSS & Font Awesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap');
+        
+        * {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        body { 
+            font-family: 'Montserrat', sans-serif; 
+            background-color: #f1f5f9;
+            color: #1e293b;
+            overscroll-behavior-y: none;
+        }
+
+        .custom-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        /* Sidebar Nav Item Styling */
+        .sidebar-nav-item {
+            transition: all 0.2s ease;
+        }
+        .sidebar-nav-item.active {
+            background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
+            color: #ffffff;
+            box-shadow: 0 6px 15px -3px rgba(14, 165, 233, 0.35);
+        }
+        .sidebar-nav-item.active .sidebar-icon-box {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        /* Ruang aman bawah halaman Score */
+        .score-view-padding {
+            padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+        }
+        @media (min-width: 768px) {
+            .score-view-padding {
+                padding-bottom: 1rem;
+            }
+        }
+
+        /* Score Box Animation & Responsive Scale (Lebih kompak di mobile) */
+        .live-score-num {
+            font-size: clamp(1.75rem, 5.5vh, 3rem);
+            line-height: 1;
+            transform-origin: center center;
+            will-change: transform;
+        }
+        @media (min-width: 768px) {
+            .live-score-num {
+                font-size: clamp(4.2rem, 9.5vh, 6.2rem);
+            }
+        }
+        @media (max-height: 680px) and (max-width: 767px) {
+            .live-score-num {
+                font-size: clamp(1.55rem, 4.8vh, 2.4rem);
+            }
+        }
+
+        .score-change {
+            animation: pop 0.3s ease-out;
+        }
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* Gradient Backgrounds */
+        .bg-sudut-biru { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
+        .bg-sudut-merah { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); }
+        .bg-tie-break { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+
+        /* Badge Penalty (Lebih kompak di mobile agar kotak nilai kecil & rapi) */
+        .badge-pen {
+            display: flex; align-items: center; justify-content: center;
+            width: 17px; height: 17px; border-radius: 4px;
+            background: #e2e8f0; color: #64748b; font-size: 8px; font-weight: bold;
+        }
+        @media (min-width: 768px) {
+            .badge-pen { width: 24px; height: 24px; border-radius: 5px; font-size: 11px; }
+        }
+        
+        .badge-pen.active-b { background: #fbbf24; color: #000; box-shadow: 0 0 8px rgba(251, 191, 36, 0.6); }
+        .badge-pen.active-m { background: #fbbf24; color: #000; box-shadow: 0 0 8px rgba(251, 191, 36, 0.6); }
+
+        /* Tabel Statistik Bergaris */
+        .stat-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        .stat-table th,
+        .stat-table td {
+            border: 1px solid #cbd5e1;
+            padding: 8px 6px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        @media (min-width: 768px) {
+            .stat-table th,
+            .stat-table td {
+                padding: 11px 12px;
+            }
+        }
+
+        /* Tabel Ketua Pertandingan Bergaris */
+        .ketua-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        .ketua-table th,
+        .ketua-table td {
+            border: 1px solid #cbd5e1;
+            padding: 5px 4px;
+            vertical-align: middle;
+        }
+        @media (min-width: 768px) {
+            .ketua-table th,
+            .ketua-table td {
+                padding: 7px 8px;
+            }
+        }
+
+        /* Tabel Daftar Peserta Bergaris */
+        .peserta-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .peserta-table th,
+        .peserta-table td {
+            border: 1px solid #cbd5e1;
+            padding: 7px 8px;
+            vertical-align: middle;
+        }
+        @media (min-width: 768px) {
+            .peserta-table th,
+            .peserta-table td {
+                padding: 9px 12px;
+            }
+        }
+
+        /* Tabel Rekapitulasi Juara Bergaris */
+        .rekap-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .rekap-table th,
+        .rekap-table td {
+            border: 1px solid #cbd5e1;
+            padding: 7px 8px;
+            vertical-align: middle;
+        }
+        @media (min-width: 768px) {
+            .rekap-table th,
+            .rekap-table td {
+                padding: 8px 12px;
+            }
+        }
+
+        /* Poin Juri Badge Ketua Pertandingan */
+        .kp-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 3px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 900;
+            line-height: 1;
+        }
+        @media (min-width: 768px) {
+            .kp-chip {
+                min-width: 22px;
+                height: 22px;
+                padding: 0 4px;
+                font-size: 11px;
+                border-radius: 5px;
+            }
+        }
+        .kp-tidak-sah {
+            background-color: #e2e8f0;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            text-decoration: line-through;
+            text-decoration-thickness: 2px;
+            text-decoration-color: #0f172a;
+        }
+        .kp-sah-mutlak {
+            background-color: #16a34a;
+            color: #ffffff;
+            border: 1px solid #15803d;
+            box-shadow: 0 1px 2px rgba(22, 163, 74, 0.25);
+        }
+        .kp-tidak-sah-dbl {
+            background-color: #dc2626;
+            color: #ffffff;
+            border: 1px solid #b91c1c;
+            box-shadow: 0 1px 2px rgba(220, 38, 38, 0.25);
+        }
+        .kp-sah-dbl {
+            background-color: #facc15;
+            color: #0f172a;
+            border: 1px solid #eab308;
+            box-shadow: 0 1px 2px rgba(234, 179, 8, 0.3);
+        }
+        .kp-pendukung {
+            background-color: #2563eb;
+            color: #ffffff;
+            border: 1px solid #1d4ed8;
+            box-shadow: 0 1px 2px rgba(37, 99, 235, 0.25);
+        }
+
+        /* Elemen khusus cetak PDF */
+        .print-only {
+            display: none;
+        }
+
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 10mm 12mm;
+            }
+
+            html, body {
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+                overflow: visible !important;
+                background: #ffffff !important;
+                color: #0f172a !important;
+                display: block !important;
+            }
+
+            header,
+            aside,
+            #sidebar-backdrop,
+            #juri-history-modal,
+            .no-print {
+                display: none !important;
+            }
+
+            #main-content {
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+                overflow: visible !important;
+                background: #ffffff !important;
+                display: block !important;
+                padding: 0 !important;
+            }
+
+            #main-content > section:not(#view-rekap) {
+                display: none !important;
+            }
+
+            #view-rekap {
+                display: block !important;
+                height: auto !important;
+                min-height: 0 !important;
+                overflow: visible !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .print-only {
+                display: block !important;
+            }
+
+            .rekap-overflow-wrap {
+                overflow: visible !important;
+            }
+
+            .rekap-group-card {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+                box-shadow: none !important;
+                border: 1px solid #94a3b8 !important;
+                margin-bottom: 12px !important;
+            }
+
+            .rekap-table {
+                width: 100% !important;
+                min-width: 0 !important;
+                table-layout: fixed !important;
+            }
+
+            .rekap-table th,
+            .rekap-table td {
+                padding: 5px 7px !important;
+                font-size: 10px !important;
+                word-wrap: break-word !important;
+            }
+
+            .rekap-table thead {
+                display: table-header-group;
+            }
+
+            .rekap-table tr {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+
+            .print-signature {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+<body class="h-screen h-[100dvh] flex flex-col overflow-hidden relative">
+
+    <!-- Header / Top Bar -->
+    <header class="bg-slate-900 text-white px-3 py-2 md:p-4 shadow-lg z-20 flex justify-between items-center flex-shrink-0 gap-2 no-print">
+        <div class="flex items-center gap-2 md:gap-3 min-w-0">
+            <i class="fas fa-trophy text-sky-400 text-lg md:text-2xl shrink-0"></i>
+            <div class="min-w-0">
+                <h1 class="font-black text-xs md:text-lg uppercase tracking-wider leading-tight truncate"><span class="text-amber-500">2 CAHAYA</span> LIVE</h1>
+                <p class="text-[7px] md:text-[9px] text-slate-400 font-bold uppercase tracking-widest truncate">Digital Scoring System</p>
+            </div>
+        </div>
+
+        <!-- Tombol Buka/Tutup Sidebar -->
+        <button type="button" onclick="toggleSidebar()" id="sidebar-toggle-btn" aria-label="Buka Menu Sidebar" aria-expanded="false" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl transition-all shrink-0 cursor-pointer shadow-sm">
+            <span class="relative flex h-2 w-2">
+                <span id="header-dot-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span id="header-dot" class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span class="text-[10px] md:text-xs font-black uppercase tracking-wider text-slate-100">Menu</span>
+            <i class="fas fa-bars text-sky-400 text-xs md:text-sm"></i>
+        </button>
+    </header>
+
+    <!-- BACKDROP SIDEBAR -->
+    <div id="sidebar-backdrop" onclick="closeSidebar()" class="fixed inset-0 bg-slate-950/60 backdrop-blur-[2px] z-40 hidden opacity-0 transition-opacity duration-300 no-print"></div>
+
+    <!-- SIDEBAR NAVIGASI (DAPAT MEMBUKA DAN MENUTUP) -->
+    <aside id="app-sidebar" class="fixed top-0 right-0 h-full w-72 max-w-[82vw] bg-slate-900 text-white shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-out flex flex-col border-l border-slate-800 no-print">
+        <!-- Header Sidebar -->
+        <div class="p-4 border-b border-slate-800 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-500/30 flex items-center justify-center shrink-0">
+                    <i class="fas fa-trophy text-sky-400 text-sm"></i>
+                </div>
+                <div class="min-w-0">
+                    <h2 class="font-black text-xs uppercase tracking-wider truncate"><span class="text-amber-500">2 CAHAYA</span> MENU</h2>
+                    <p class="text-[8px] text-slate-400 font-bold uppercase tracking-widest truncate">Navigasi Halaman</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeSidebar()" aria-label="Tutup Sidebar" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition cursor-pointer border border-slate-700">
+                <i class="fas fa-times text-sm"></i>
+            </button>
+        </div>
+
+        <!-- Status Koneksi di dalam Sidebar -->
+        <div class="px-4 pt-3 pb-1">
+            <div class="flex items-center justify-between bg-slate-800/80 border border-slate-700/80 px-3 py-2 rounded-xl">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Status Server</span>
+                <div class="flex items-center gap-1.5">
+                    <span class="relative flex h-2 w-2">
+                        <span id="sidebar-dot-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span id="sidebar-dot" class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span class="text-[9px] font-black text-emerald-400 uppercase tracking-wider" id="conn-status">Menghubungkan...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Navigasi Sidebar -->
+        <nav class="flex-1 p-3 space-y-1.5 overflow-y-auto custom-scroll">
+            <button type="button" onclick="switchView('monitor')" id="snav-monitor" class="sidebar-nav-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer">
+                <span class="sidebar-icon-box w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center shrink-0 text-sky-400 transition-colors">
+                    <i class="fas fa-tv text-sm"></i>
+                </span>
+                <div class="min-w-0 flex-1">
+                    <div class="text-xs font-black uppercase tracking-wider">Score</div>
+                    <div class="text-[9px] opacity-75 font-semibold truncate">Tampilan Live Score</div>
+                </div>
+                <i class="fas fa-chevron-right text-[10px] opacity-60"></i>
+            </button>
+
+            <button type="button" onclick="switchView('ketua')" id="snav-ketua" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer">
+                <span class="sidebar-icon-box w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center shrink-0 text-sky-400 transition-colors">
+                    <i class="fas fa-clipboard-list text-sm"></i>
+                </span>
+                <div class="min-w-0 flex-1">
+                    <div class="text-xs font-black uppercase tracking-wider">Ketua Pertandingan</div>
+                    <div class="text-[9px] opacity-75 font-semibold truncate">Tabel Poin Juri & Riwayat</div>
+                </div>
+                <i class="fas fa-chevron-right text-[10px] opacity-60"></i>
+            </button>
+
+            <button type="button" onclick="switchView('statistik')" id="snav-statistik" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer">
+                <span class="sidebar-icon-box w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center shrink-0 text-sky-400 transition-colors">
+                    <i class="fas fa-chart-pie text-sm"></i>
+                </span>
+                <div class="min-w-0 flex-1">
+                    <div class="text-xs font-black uppercase tracking-wider">Statistik</div>
+                    <div class="text-[9px] opacity-75 font-semibold truncate">Rincian Poin & Penalti</div>
+                </div>
+                <i class="fas fa-chevron-right text-[10px] opacity-60"></i>
+            </button>
+
+            <button type="button" onclick="switchView('bracket')" id="snav-bracket" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer">
+                <span class="sidebar-icon-box w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center shrink-0 text-sky-400 transition-colors">
+                    <i class="fas fa-sitemap text-sm"></i>
+                </span>
+                <div class="min-w-0 flex-1">
+                    <div class="text-xs font-black uppercase tracking-wider">Bagan</div>
+                    <div class="text-[9px] opacity-75 font-semibold truncate">Alur & Bracket Kelas</div>
+                </div>
+                <i class="fas fa-chevron-right text-[10px] opacity-60"></i>
+            </button>
+
+            <button type="button" onclick="switchView('jadwal')" id="snav-jadwal" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer">
+                <span class="sidebar-icon-box w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center shrink-0 text-sky-400 transition-colors">
+                    <i class="fas fa-list-ol text-sm"></i>
+                </span>
+                <div class="min-w-0 flex-1">
+                    <div class="text-xs font-black uppercase tracking-wider">Jadwal</div>
+                    <div class="text-[9px] opacity-75 font-semibold truncate">Daftar Partai Tanding</div>
+                </div>
+                <i class="fas fa-chevron-right text-[10px] opacity-60"></i>
+            </button>
+
+            <button type="button" onclick="switchView('peserta')" id="snav-peserta" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer">
+                <span class="sidebar-icon-box w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center shrink-0 text-sky-400 transition-colors">
+                    <i class="fas fa-users text-sm"></i>
+                </span>
+                <div class="min-w-0 flex-1">
+                    <div class="text-xs font-black uppercase tracking-wider">Daftar Peserta</div>
+                    <div class="text-[9px] opacity-75 font-semibold truncate">Status Gugur & Fase Tanding</div>
+                </div>
+                <i class="fas fa-chevron-right text-[10px] opacity-60"></i>
+            </button>
+
+            <button type="button" onclick="switchView('rekap')" id="snav-rekap" class="sidebar-nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-slate-300 hover:bg-slate-800 hover:text-white cursor-pointer">
+                <span class="sidebar-icon-box w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center shrink-0 text-amber-400 transition-colors">
+                    <i class="fas fa-award text-sm"></i>
+                </span>
+                <div class="min-w-0 flex-1">
+                    <div class="text-xs font-black uppercase tracking-wider">Rekap Juara</div>
+                    <div class="text-[9px] opacity-75 font-semibold truncate">Laporan Juara 1, 2, 3 & PDF</div>
+                </div>
+                <i class="fas fa-chevron-right text-[10px] opacity-60"></i>
+            </button>
+        </nav>
+
+        <!-- Footer Sidebar -->
+        <div class="p-3 border-t border-slate-800">
+            <button type="button" onclick="closeSidebar()" class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-black uppercase tracking-widest transition flex items-center justify-center gap-1.5 cursor-pointer border border-slate-700">
+                <i class="fas fa-arrow-right"></i> Tutup Sidebar
+            </button>
+        </div>
+    </aside>
+
+    <!-- CONTENT AREA -->
+    <main class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scroll relative bg-slate-100" id="main-content">
+        
+        <!-- VIEW 1: LIVE SCORE (MOBILE FRIENDLY, KOTAK NILAI KOMPAK MASUK 1 LAYAR) -->
+        <section id="view-monitor" class="h-full pt-1.5 px-2 sm:pt-2 sm:px-3 md:p-4 score-view-padding flex flex-col items-center justify-start md:justify-center overflow-y-auto overflow-x-hidden custom-scroll hidden">
+            <div id="monitor-container" class="w-full max-w-5xl md:h-auto flex flex-col justify-start md:justify-center">
+                <div class="text-center text-slate-400 my-auto">
+                    <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+                    <p class="font-bold uppercase tracking-widest text-xs">Memuat Data Live...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 2: KETUA PERTANDINGAN (TABEL BERGARIS JURI 1-3 x BABAK 1-3 + POP UP RIWAYAT JURI) -->
+        <section id="view-ketua" class="min-h-full p-2 sm:p-3 md:p-4 pb-6 hidden">
+            <div id="ketua-container" class="w-full max-w-6xl mx-auto flex flex-col gap-2.5 md:gap-3">
+                <div class="text-center text-slate-400 my-20">
+                    <i class="fas fa-clipboard-list text-3xl mb-3"></i>
+                    <p class="font-bold uppercase tracking-widest text-xs">Menunggu Data Ketua Pertandingan...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 3: STATISTIK PERTANDINGAN (MOBILE FRIENDLY TABEL BERGARIS) -->
+        <section id="view-statistik" class="min-h-full p-2.5 sm:p-3 md:p-4 pb-6 hidden">
+            <div id="statistik-container" class="max-w-4xl mx-auto">
+                <div class="text-center text-slate-400 my-20">
+                    <i class="fas fa-chart-bar text-3xl mb-3"></i>
+                    <p class="font-bold uppercase tracking-widest text-xs">Menunggu Data Statistik...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 4: BAGAN / BRACKET (MOBILE FRIENDLY + MODE POHON) -->
+        <section id="view-bracket" class="min-h-full p-2.5 sm:p-3 md:p-4 pb-6 hidden">
+            <div class="max-w-6xl mx-auto w-full">
+                <!-- Header Bagan & Filter -->
+                <div class="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-200 mb-3 flex flex-col gap-2.5">
+                    <div class="flex flex-wrap justify-between items-center gap-2">
+                        <div>
+                            <h2 class="text-xs md:text-sm font-black text-slate-800 uppercase italic">Bagan / Bracket</h2>
+                            <p id="bracket-subtitle" class="text-[8px] md:text-[9px] font-bold text-blue-600 uppercase tracking-widest mt-0.5">Alur Pertandingan</p>
+                        </div>
+                        <!-- Toggle Mode Tampilan Bagan -->
+                        <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
+                            <button type="button" onclick="setBracketViewMode('stack')" id="bmode-stack" class="px-2.5 py-1 rounded-md text-[9px] font-black uppercase bg-slate-800 text-white transition flex items-center gap-1">
+                                <i class="fas fa-layer-group"></i> Rapi
+                            </button>
+                            <button type="button" onclick="setBracketViewMode('tree')" id="bmode-tree" class="px-2.5 py-1 rounded-md text-[9px] font-black uppercase text-slate-600 transition flex items-center gap-1">
+                                <i class="fas fa-sitemap"></i> Pohon
+                            </button>
+                        </div>
+                    </div>
+
+                    <select id="bracket-class-select" class="w-full bg-slate-50 border border-slate-200 text-[10px] md:text-xs font-black uppercase rounded-lg px-3 py-2 text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm transition-all">
+                        <option value="">Memuat Kelas...</option>
+                    </select>
+                </div>
+                
+                <!-- Container Bracket -->
+                <div id="bracket-scroll-wrap" class="bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-4 shadow-inner relative custom-scroll min-h-[50vh]">
+                    <div id="bracket-container" class="w-full">
+                        <div class="text-center w-full text-slate-400 text-[10px] font-bold uppercase tracking-widest py-10">Pilih kelas untuk memuat bagan</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 5: JADWAL PERTANDINGAN (MOBILE FRIENDLY SATU LAYAR TANPA GESER) -->
+        <section id="view-jadwal" class="min-h-full p-2.5 sm:p-3 md:p-4 pb-6 hidden">
+            <div class="max-w-5xl mx-auto w-full">
+                <div class="flex justify-between items-end mb-2.5">
+                    <div>
+                        <h2 class="text-sm md:text-xl font-black text-slate-800 uppercase italic">Jadwal Tanding</h2>
+                        <p class="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest">Daftar Pertandingan</p>
+                    </div>
+                    <div class="bg-white px-2.5 py-1 rounded-md shadow-sm border border-slate-200 text-[9px] md:text-[10px] font-bold text-slate-600 shrink-0">
+                        Total: <span id="total-jadwal">0</span>
+                    </div>
+                </div>
+
+                <!-- Filter & Pencarian Jadwal -->
+                <div class="bg-white p-2.5 rounded-xl shadow-sm border border-slate-200 mb-3 flex flex-col sm:flex-row gap-2">
+                    <div class="relative flex-1 min-w-0">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="jadwal-search" oninput="renderJadwal()" placeholder="Cari partai, nama, kontingen, kelas..." class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-sky-500">
+                    </div>
+                    <div class="flex gap-1.5 shrink-0">
+                        <button type="button" onclick="setJadwalFilter('all')" id="jfilter-all" class="flex-1 sm:flex-none px-3 py-2 rounded-lg text-[9px] font-black uppercase bg-slate-800 text-white transition">Semua</button>
+                        <button type="button" onclick="setJadwalFilter('live')" id="jfilter-live" class="flex-1 sm:flex-none px-3 py-2 rounded-lg text-[9px] font-black uppercase bg-slate-100 text-slate-600 transition">Live</button>
+                        <button type="button" onclick="setJadwalFilter('done')" id="jfilter-done" class="flex-1 sm:flex-none px-3 py-2 rounded-lg text-[9px] font-black uppercase bg-slate-100 text-slate-600 transition">Selesai</button>
+                    </div>
+                </div>
+
+                <!-- Container Jadwal -->
+                <div id="jadwal-container" class="w-full">
+                    <!-- Data Jadwal Dirender Disini -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 6: DAFTAR PESERTA (TABEL BERGARIS DIKELOMPOKKAN BERDASARKAN KETERANGAN + PAGINATION 10/HALAMAN) -->
+        <section id="view-peserta" class="min-h-full p-2.5 sm:p-3 md:p-4 pb-6 hidden">
+            <div class="max-w-6xl mx-auto w-full">
+                <div class="flex justify-between items-end mb-2.5 gap-2">
+                    <div>
+                        <h2 class="text-sm md:text-xl font-black text-slate-800 uppercase italic">Daftar Peserta</h2>
+                        <p class="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest">Status Realtime Peserta (Gugur & Fase Pertandingan)</p>
+                    </div>
+                    <div class="bg-white px-2.5 py-1 rounded-md shadow-sm border border-slate-200 text-[9px] md:text-[10px] font-bold text-slate-600 shrink-0">
+                        Total Peserta: <span id="total-peserta">0</span>
+                    </div>
+                </div>
+
+                <!-- Filter & Pencarian Peserta -->
+                <div class="bg-white p-2.5 rounded-xl shadow-sm border border-slate-200 mb-3 flex flex-col sm:flex-row gap-2">
+                    <div class="relative flex-1 min-w-0">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="peserta-search" oninput="onPesertaSearch()" placeholder="Cari nama peserta, kontingen, kelas, gender..." class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-sky-500">
+                    </div>
+                    <div class="shrink-0">
+                        <select id="peserta-group-filter" onchange="onPesertaGroupFilter()" class="w-full sm:w-56 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-[10px] md:text-xs font-black uppercase text-slate-700 outline-none focus:border-sky-500 cursor-pointer">
+                            <option value="all">Semua Kelompok</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Container Tabel Daftar Peserta -->
+                <div id="peserta-container" class="space-y-4">
+                    <div class="bg-white rounded-xl border border-slate-200 p-10 text-center text-slate-400 font-bold uppercase text-[10px]">
+                        <i class="fas fa-users text-2xl mb-2 block"></i>
+                        Memuat Data Peserta...
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 7: LAPORAN REKAPITULASI JUARA (KELOMPOK KELAS, USIA, GENDER + CETAK PDF RAPI) -->
+        <section id="view-rekap" class="min-h-full p-2.5 sm:p-3 md:p-4 pb-6 hidden">
+            <div class="max-w-5xl mx-auto w-full">
+
+                <!-- KOP LAPORAN KHUSUS CETAK PDF -->
+                <div class="print-only mb-4 border-b-2 border-slate-900 pb-3">
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <h1 class="text-base font-black uppercase tracking-wider text-slate-900">
+                                <span class="text-amber-600">2 CAHAYA</span> DIGITAL SCORING SYSTEM
+                            </h1>
+                            <h2 class="text-sm font-black uppercase tracking-widest text-slate-700 mt-0.5">
+                                LAPORAN REKAPITULASI JUARA PERTANDINGAN
+                            </h2>
+                            <p id="rekap-print-filter-info" class="text-[10px] font-bold uppercase text-slate-500 mt-0.5">
+                                Dikelompokkan Berdasarkan Usia, Kelas, dan Gender
+                            </p>
+                        </div>
+                        <div class="text-right text-[9px] font-bold text-slate-600">
+                            <div>Tanggal Cetak:</div>
+                            <div id="rekap-print-date" class="font-black text-slate-900">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HEADER HALAMAN & TOMBOL CETAK PDF -->
+                <div class="flex flex-wrap justify-between items-center gap-2 mb-3 no-print">
+                    <div>
+                        <h2 class="text-sm md:text-xl font-black text-slate-800 uppercase italic">Laporan Rekapitulasi Juara</h2>
+                        <p class="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest">Dikelompokkan Berdasarkan Kelas, Usia & Gender</p>
+                    </div>
+                    <button type="button" onclick="printRekapPDF()" class="bg-rose-600 hover:bg-rose-500 active:scale-95 text-white px-3.5 py-2 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-md transition cursor-pointer">
+                        <i class="fas fa-file-pdf text-sm"></i>
+                        <span>Cetak PDF</span>
+                    </button>
+                </div>
+
+                <!-- RINGKASAN STATISTIK JUARA -->
+                <div id="rekap-summary" class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                    <!-- Dirender dinamis -->
+                </div>
+
+                <!-- FILTER & PENCARIAN REKAP JUARA (TIDAK IKUT TERCETAK) -->
+                <div class="bg-white p-2.5 rounded-xl shadow-sm border border-slate-200 mb-3 grid grid-cols-1 sm:grid-cols-4 gap-2 no-print">
+                    <div class="relative sm:col-span-2 min-w-0">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="rekap-search" oninput="renderRekapJuara()" placeholder="Cari nama juara, kontingen, kelas..." class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-sky-500">
+                    </div>
+                    <select id="rekap-usia-filter" onchange="renderRekapJuara()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-[10px] md:text-xs font-black uppercase text-slate-700 outline-none focus:border-sky-500 cursor-pointer">
+                        <option value="all">Semua Usia</option>
+                    </select>
+                    <select id="rekap-gender-filter" onchange="renderRekapJuara()" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-[10px] md:text-xs font-black uppercase text-slate-700 outline-none focus:border-sky-500 cursor-pointer">
+                        <option value="all">Semua Gender</option>
+                    </select>
+                </div>
+
+                <!-- KETERANGAN PENENTUAN JUARA -->
+                <div class="bg-white px-3 py-2 rounded-xl border border-slate-200 mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[9px] md:text-[10px] font-bold text-slate-600">
+                    <span class="inline-flex items-center gap-1.5">
+                        <span class="px-2 py-0.5 rounded bg-amber-400 text-slate-950 font-black uppercase text-[8px] md:text-[9px]">Juara 1</span>
+                        Pemenang Final
+                    </span>
+                    <span class="inline-flex items-center gap-1.5">
+                        <span class="px-2 py-0.5 rounded bg-slate-300 text-slate-900 font-black uppercase text-[8px] md:text-[9px]">Juara 2</span>
+                        Gugur Final
+                    </span>
+                    <span class="inline-flex items-center gap-1.5">
+                        <span class="px-2 py-0.5 rounded bg-orange-200 text-orange-900 font-black uppercase text-[8px] md:text-[9px]">Juara 3</span>
+                        Gugur Semifinal
+                    </span>
+                </div>
+
+                <!-- CONTAINER KELOMPOK REKAPITULASI JUARA -->
+                <div id="rekap-container" class="space-y-3">
+                    <div class="bg-white rounded-xl border border-slate-200 p-10 text-center text-slate-400 font-bold uppercase text-[10px]">
+                        <i class="fas fa-award text-2xl mb-2 block"></i>
+                        Memuat Laporan Rekapitulasi Juara...
+                    </div>
+                </div>
+
+                <!-- BLOK TANDA TANGAN KHUSUS CETAK PDF -->
+                <div class="print-only print-signature mt-6 pt-4">
+                    <div class="grid grid-cols-2 gap-8 text-center text-[10px] font-bold text-slate-700">
+                        <div>
+                            <p class="uppercase">Mengetahui,</p>
+                            <p class="uppercase font-black text-slate-900">Ketua Panitia Pelaksana</p>
+                            <div class="h-16"></div>
+                            <p class="border-t border-slate-400 inline-block px-8 pt-1">( ........................................ )</p>
+                        </div>
+                        <div>
+                            <p class="uppercase">Disahkan Oleh,</p>
+                            <p class="uppercase font-black text-slate-900">Ketua Pertandingan / Dewan Wasit</p>
+                            <div class="h-16"></div>
+                            <p class="border-t border-slate-400 inline-block px-8 pt-1">( ........................................ )</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- POP UP MODAL RIWAYAT JURI -->
+    <div id="juri-history-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-2.5 sm:p-4 no-print">
+        <div onclick="closeJuriHistoryModal()" class="fixed inset-0 bg-slate-950/65 backdrop-blur-[2px]"></div>
+        <div class="relative bg-white w-full max-w-2xl max-h-[88vh] rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden z-10">
+            <!-- Header Modal -->
+            <div class="bg-slate-900 text-white px-4 py-3 flex items-center justify-between gap-2 shrink-0">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-400/30 flex items-center justify-center shrink-0">
+                        <i class="fas fa-history text-sky-400 text-sm"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="text-xs sm:text-sm font-black uppercase tracking-wider truncate">Riwayat Input Juri</h3>
+                        <p id="juri-modal-subtitle" class="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">Log Poin Juri 1, Juri 2, Juri 3</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeJuriHistoryModal()" aria-label="Tutup Pop Up" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition cursor-pointer border border-slate-700 shrink-0">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Filter Sudut & Babak di Modal -->
+            <div class="p-2.5 sm:p-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 shrink-0">
+                <div class="flex items-center gap-1.5">
+                    <button type="button" onclick="setJuriHistoryCorner('biru')" id="jmodal-corner-biru" class="px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black uppercase bg-blue-600 text-white shadow-sm transition cursor-pointer">
+                        Sudut Biru
+                    </button>
+                    <button type="button" onclick="setJuriHistoryCorner('merah')" id="jmodal-corner-merah" class="px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black uppercase bg-slate-200 text-slate-600 transition cursor-pointer">
+                        Sudut Merah
+                    </button>
+                </div>
+                <div class="flex items-center gap-1">
+                    <button type="button" onclick="setJuriHistoryRound('all')" id="jmodal-round-all" class="px-2 py-1 rounded-md text-[9px] font-black uppercase bg-slate-800 text-white transition cursor-pointer">Semua</button>
+                    <button type="button" onclick="setJuriHistoryRound(1)" id="jmodal-round-1" class="px-2 py-1 rounded-md text-[9px] font-black uppercase bg-slate-200 text-slate-600 transition cursor-pointer">B1</button>
+                    <button type="button" onclick="setJuriHistoryRound(2)" id="jmodal-round-2" class="px-2 py-1 rounded-md text-[9px] font-black uppercase bg-slate-200 text-slate-600 transition cursor-pointer">B2</button>
+                    <button type="button" onclick="setJuriHistoryRound(3)" id="jmodal-round-3" class="px-2 py-1 rounded-md text-[9px] font-black uppercase bg-slate-200 text-slate-600 transition cursor-pointer">B3</button>
+                </div>
+            </div>
+
+            <!-- Keterangan Warna Poin -->
+            <div class="px-3 py-2 bg-white border-b border-slate-200 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[8px] sm:text-[9px] font-bold text-slate-600 shrink-0">
+                <span class="inline-flex items-center gap-1"><span class="kp-chip kp-tidak-sah">1</span> Tidak Sah (Dicoret)</span>
+                <span class="inline-flex items-center gap-1"><span class="kp-chip kp-sah-mutlak">1</span> Sah Mutlak (Hijau)</span>
+                <span class="inline-flex items-center gap-1"><span class="kp-chip kp-tidak-sah-dbl">1</span> Tidak Sah Double Click (Merah)</span>
+                <span class="inline-flex items-center gap-1"><span class="kp-chip kp-sah-dbl">1</span> Sah Double Click (Kuning)</span>
+                <span class="inline-flex items-center gap-1"><span class="kp-chip kp-pendukung">1</span> Poin Pendukung (Biru)</span>
+            </div>
+
+            <!-- Body Modal Riwayat Juri -->
+            <div id="juri-modal-body" class="flex-1 overflow-y-auto custom-scroll p-2.5 sm:p-4 bg-slate-50">
+                <!-- Konten dirender dinamis -->
+            </div>
+
+            <!-- Footer Modal -->
+            <div class="p-2.5 sm:p-3 bg-white border-t border-slate-200 flex justify-end shrink-0">
+                <button type="button" onclick="closeJuriHistoryModal()" class="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-[10px] font-black uppercase tracking-wider transition cursor-pointer">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT FIREBASE & LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // Konfigurasi Firebase
+        const firebaseConfig = {
+  apiKey: "AIzaSyAHIPab-S8DM2zR7Fd2SDjlELJHRPB8TkA",
+  authDomain: "warscoring-60650.firebaseapp.com",
+  databaseURL: "https://warscoring-60650-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "warscoring-60650",
+  storageBucket: "warscoring-60650.firebasestorage.app",
+  messagingSenderId: "782315540387",
+  appId: "1:782315540387:web:c0e9f78dfcbb3375719416"
+};
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const dbRef = ref(database, 'pencak_scoring_state');
+
+        let globalState = null;
+        let lastScoreB = 0;
+        let lastScoreM = 0;
+        let selectedBracketClass = ''; 
+        let jadwalFilter = 'all';
+        let bracketViewMode = window.innerWidth < 768 ? 'stack' : 'tree';
+        let isSidebarOpen = false;
+
+        // State Pop Up Riwayat Juri
+        let juriModalCorner = 'biru';
+        let juriModalRound = 'all';
+
+        // State Daftar Peserta & Pagination (10 per halaman)
+        const PESERTA_PER_PAGE = 10;
+        let pesertaGroupPages = {};
+        let selectedPesertaGroup = 'all';
+
+        // Tracker Round untuk array flat tanpa field round
+        let ketuaRoundTracker = {
+            matchIdx: -1,
+            biru: { j1: [], j2: [], j3: [] },
+            merah: { j1: [], j2: [], j3: [] }
+        };
+
+        // Helper Anti-XSS
+        function escapeHTML(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // Helper Konversi Array/Object dari Firebase
+        function toArr(val) {
+            if (!val) return [];
+            if (Array.isArray(val)) return val;
+            if (typeof val === 'object') return Object.values(val);
+            return [];
+        }
+
+        function extractNumVal(item) {
+            if (item === null || item === undefined) return 0;
+            if (typeof item === 'object') {
+                return Number(item.val ?? item.point ?? item.score ?? item.nilai ?? item.p ?? 0) || 0;
+            }
+            return Number(item) || 0;
+        }
+
+        function extractExplicitRound(item) {
+            if (item && typeof item === 'object') {
+                const r = Number(item.round ?? item.babak ?? item.r ?? 0);
+                if (r >= 1 && r <= 3) return r;
+            }
+            return 0;
+        }
+
+        // ==========================================
+        // KONTROL BUKA & TUTUP SIDEBAR
+        // ==========================================
+        window.openSidebar = function() {
+            const sidebar = document.getElementById('app-sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            const toggleBtn = document.getElementById('sidebar-toggle-btn');
+
+            isSidebarOpen = true;
+            backdrop.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                backdrop.classList.remove('opacity-0');
+                backdrop.classList.add('opacity-100');
+                sidebar.classList.remove('translate-x-full');
+                sidebar.classList.add('translate-x-0');
+            });
+            if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
+        };
+
+        window.closeSidebar = function() {
+            const sidebar = document.getElementById('app-sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            const toggleBtn = document.getElementById('sidebar-toggle-btn');
+
+            isSidebarOpen = false;
+            sidebar.classList.remove('translate-x-0');
+            sidebar.classList.add('translate-x-full');
+            backdrop.classList.remove('opacity-100');
+            backdrop.classList.add('opacity-0');
+            if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+
+            setTimeout(() => {
+                if (!isSidebarOpen) {
+                    backdrop.classList.add('hidden');
+                }
+            }, 300);
+        };
+
+        window.toggleSidebar = function() {
+            if (isSidebarOpen) {
+                window.closeSidebar();
+            } else {
+                window.openSidebar();
+            }
+        };
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('juri-history-modal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    window.closeJuriHistoryModal();
+                    return;
+                }
+                if (isSidebarOpen) {
+                    window.closeSidebar();
+                }
+            }
+        });
+
+        function updateConnectionUI(isOnline, labelText) {
+            const statusEl = document.getElementById('conn-status');
+            const headerDot = document.getElementById('header-dot');
+            const headerPing = document.getElementById('header-dot-ping');
+            const sidebarDot = document.getElementById('sidebar-dot');
+            const sidebarPing = document.getElementById('sidebar-dot-ping');
+
+            if (statusEl) {
+                statusEl.innerText = labelText;
+                statusEl.classList.toggle('text-emerald-400', isOnline);
+                statusEl.classList.toggle('text-red-400', !isOnline);
+            }
+
+            [headerDot, sidebarDot].forEach(el => {
+                if (!el) return;
+                el.classList.toggle('bg-emerald-500', isOnline);
+                el.classList.toggle('bg-red-500', !isOnline);
+            });
+
+            [headerPing, sidebarPing].forEach(el => {
+                if (!el) return;
+                el.classList.toggle('bg-emerald-400', isOnline);
+                el.classList.toggle('bg-red-400', !isOnline);
+            });
+        }
+
+        // State & Logika Flashing Indikator Juri, Pukulan, Tendangan dan Drop
+        let lastMatchIdx = -1;
+        let flashData = {
+            biru: { j1: 0, j2: 0, j3: 0, drop: 0, onj1: false, onj2: false, onj3: false, ondrop: false, onpunch: false, onkick: false },
+            merah: { j1: 0, j2: 0, j3: 0, drop: 0, onj1: false, onj2: false, onj3: false, ondrop: false, onpunch: false, onkick: false }
+        };
+        let flashTimers = {};
+
+        function processFlash(state) {
+            if (!state || state.bertandingIdx < 0) return;
+            const match = state.matches[state.bertandingIdx];
+            if (!match || match.status === 'selesai') return;
+
+            if (state.bertandingIdx !== lastMatchIdx) {
+                ['biru', 'merah'].forEach(side => {
+                    const sc = state[side] || {};
+                    flashData[side].j1 = toArr(sc.juri?.j1).reduce((a,b)=>a+extractNumVal(b),0);
+                    flashData[side].j2 = toArr(sc.juri?.j2).reduce((a,b)=>a+extractNumVal(b),0);
+                    flashData[side].j3 = toArr(sc.juri?.j3).reduce((a,b)=>a+extractNumVal(b),0);
+                    flashData[side].drop = sc.jat || 0;
+                    
+                    flashData[side].onj1 = false;
+                    flashData[side].onj2 = false;
+                    flashData[side].onj3 = false;
+                    flashData[side].ondrop = false;
+                    flashData[side].onpunch = false;
+                    flashData[side].onkick = false;
+                });
+                lastMatchIdx = state.bertandingIdx;
+                return; 
+            }
+
+            ['biru', 'merah'].forEach(side => {
+                const sc = state[side];
+                if (!sc) return;
+
+                const curJ1 = toArr(sc.juri?.j1).reduce((a,b)=>a+extractNumVal(b),0);
+                const curJ2 = toArr(sc.juri?.j2).reduce((a,b)=>a+extractNumVal(b),0);
+                const curJ3 = toArr(sc.juri?.j3).reduce((a,b)=>a+extractNumVal(b),0);
+                const curDrop = sc.jat || 0; 
+
+                let triggeredPunch = false;
+                let triggeredKick = false;
+
+                const checkAndTrigger = (key, curVal) => {
+                    const oldVal = flashData[side][key];
+                    if (curVal > oldVal) {
+                        const diff = curVal - oldVal;
+                        if (diff === 1) triggeredPunch = true;
+                        if (diff === 2) triggeredKick = true;
+
+                        flashData[side]['on' + key] = true;
+                        if (flashTimers[`${side}_${key}`]) clearTimeout(flashTimers[`${side}_${key}`]);
+                        
+                        flashTimers[`${side}_${key}`] = setTimeout(() => {
+                            flashData[side]['on' + key] = false;
+                            if (!document.getElementById('view-monitor').classList.contains('hidden')) {
+                                renderMonitor();
+                            }
+                        }, 1500); 
+                    }
+                    flashData[side][key] = curVal;
+                };
+
+                checkAndTrigger('j1', curJ1);
+                checkAndTrigger('j2', curJ2);
+                checkAndTrigger('j3', curJ3);
+                
+                if (curDrop > flashData[side].drop) {
+                    flashData[side].ondrop = true;
+                    if (flashTimers[`${side}_drop`]) clearTimeout(flashTimers[`${side}_drop`]);
+                    flashTimers[`${side}_drop`] = setTimeout(() => {
+                        flashData[side].ondrop = false;
+                        if (!document.getElementById('view-monitor').classList.contains('hidden')) renderMonitor();
+                    }, 1500);
+                }
+                flashData[side].drop = curDrop;
+
+                if (triggeredPunch) {
+                    flashData[side].onpunch = true;
+                    if (flashTimers[`${side}_punch`]) clearTimeout(flashTimers[`${side}_punch`]);
+                    flashTimers[`${side}_punch`] = setTimeout(() => {
+                        flashData[side].onpunch = false;
+                        if (!document.getElementById('view-monitor').classList.contains('hidden')) renderMonitor();
+                    }, 1500);
+                }
+
+                if (triggeredKick) {
+                    flashData[side].onkick = true;
+                    if (flashTimers[`${side}_kick`]) clearTimeout(flashTimers[`${side}_kick`]);
+                    flashTimers[`${side}_kick`] = setTimeout(() => {
+                        flashData[side].onkick = false;
+                        if (!document.getElementById('view-monitor').classList.contains('hidden')) renderMonitor();
+                    }, 1500);
+                }
+            });
+        }
+
+        // Tracker urutan babak untuk juri jika Firebase menyimpan array angka polos
+        function syncKetuaRoundTracker(state) {
+            if (!state || state.bertandingIdx < 0) return;
+            const curMatchIdx = state.bertandingIdx;
+            if (ketuaRoundTracker.matchIdx !== curMatchIdx) {
+                ketuaRoundTracker = {
+                    matchIdx: curMatchIdx,
+                    biru: { j1: [], j2: [], j3: [] },
+                    merah: { j1: [], j2: [], j3: [] }
+                };
+            }
+            const curBabak = Math.min(3, Math.max(1, Number(state.babak) || 1));
+
+            ['biru', 'merah'].forEach(side => {
+                const sc = state[side] || {};
+                ['j1', 'j2', 'j3'].forEach(jk => {
+                    const rawArr = toArr(sc.juri?.[jk]).filter(v => extractNumVal(v) > 0);
+                    const tracked = ketuaRoundTracker[side][jk];
+
+                    if (rawArr.length < tracked.length) {
+                        tracked.length = rawArr.length;
+                    }
+                    const wasEmpty = tracked.length === 0;
+                    for (let i = tracked.length; i < rawArr.length; i++) {
+                        const explicitR = extractExplicitRound(rawArr[i]);
+                        if (explicitR > 0) {
+                            tracked.push(explicitR);
+                        } else if (wasEmpty && curBabak > 1) {
+                            tracked.push(1);
+                        } else {
+                            tracked.push(curBabak);
+                        }
+                    }
+                });
+            });
+        }
+
+        // FUNGSI NAVIGASI 7 MENU SIDEBAR
+        window.switchView = function(view) {
+            ['monitor', 'ketua', 'statistik', 'bracket', 'jadwal', 'peserta', 'rekap'].forEach(v => {
+                const viewEl = document.getElementById(`view-${v}`);
+                const snavEl = document.getElementById(`snav-${v}`);
+                if (viewEl) viewEl.classList.add('hidden');
+                if (snavEl) snavEl.classList.remove('active');
+            });
+
+            const activeView = document.getElementById(`view-${view}`);
+            const activeSnav = document.getElementById(`snav-${view}`);
+            if (activeView) activeView.classList.remove('hidden');
+            if (activeSnav) activeSnav.classList.add('active');
+
+            document.getElementById('main-content').scrollTo(0, 0);
+            
+            if (view === 'ketua' && globalState) renderKetua();
+            if (view === 'statistik' && globalState) renderStatistik();
+            if (view === 'bracket') {
+                updateBracketModeButtons();
+                if (globalState) renderBracketView();
+            }
+            if (view === 'monitor' && globalState) renderMonitor();
+            if (view === 'jadwal' && globalState) renderJadwal();
+            if (view === 'peserta' && globalState) renderPeserta();
+            if (view === 'rekap' && globalState) renderRekapJuara();
+
+            // Tutup sidebar otomatis setelah memilih menu
+            if (isSidebarOpen) {
+                window.closeSidebar();
+            }
+        }
+
+        function updateBracketModeButtons() {
+            const btnStack = document.getElementById('bmode-stack');
+            const btnTree = document.getElementById('bmode-tree');
+            if (!btnStack || !btnTree) return;
+            btnStack.className = bracketViewMode === 'stack'
+                ? 'px-2.5 py-1 rounded-md text-[9px] font-black uppercase bg-slate-800 text-white transition flex items-center gap-1'
+                : 'px-2.5 py-1 rounded-md text-[9px] font-black uppercase text-slate-600 transition flex items-center gap-1';
+            btnTree.className = bracketViewMode === 'tree'
+                ? 'px-2.5 py-1 rounded-md text-[9px] font-black uppercase bg-slate-800 text-white transition flex items-center gap-1'
+                : 'px-2.5 py-1 rounded-md text-[9px] font-black uppercase text-slate-600 transition flex items-center gap-1';
+        }
+
+        window.setBracketViewMode = function(mode) {
+            bracketViewMode = mode;
+            updateBracketModeButtons();
+            if (globalState) renderBracketView();
+        }
+
+        // FILTER JADWAL
+        window.setJadwalFilter = function(mode) {
+            jadwalFilter = mode;
+            ['all', 'live', 'done'].forEach(f => {
+                const btn = document.getElementById(`jfilter-${f}`);
+                if (!btn) return;
+                if (f === mode) {
+                    btn.className = "flex-1 sm:flex-none px-3 py-2 rounded-lg text-[9px] font-black uppercase bg-slate-800 text-white transition";
+                } else {
+                    btn.className = "flex-1 sm:flex-none px-3 py-2 rounded-lg text-[9px] font-black uppercase bg-slate-100 text-slate-600 transition";
+                }
+            });
+            renderJadwal();
+        }
+
+        // FUNGSI KALKULASI SKOR
+        function calculateTotal(state, s) { 
+            const sc = state[s]; 
+            if(!sc || sc.dis || sc.ud || sc.wmp) return 0; 
+            
+            const j1T = toArr(sc.juri?.j1).reduce((a,b)=>a+extractNumVal(b),0);
+            const j2T = toArr(sc.juri?.j2).reduce((a,b)=>a+extractNumVal(b),0);
+            const j3T = toArr(sc.juri?.j3).reduce((a,b)=>a+extractNumVal(b),0);
+            
+            const sorted = [j1T, j2T, j3T].sort((a,b)=>a-b); 
+            const tot = sorted[1]; 
+            
+            const pMap = { teguran1:1, teguran2:2, peringatan1:5, peringatan2:10 }; 
+            let tp = 0; 
+            toArr(sc.penHistory).forEach(i => tp += (pMap[i.type]||0)); 
+            
+            return (tot || 0) + (sc.jat || 0) - tp; 
+        }
+
+        // MENDENGARKAN DATA REALTIME PERTANDINGAN
+        onValue(dbRef, (snapshot) => {
+            if (snapshot.exists()) {
+                globalState = snapshot.val();
+                updateConnectionUI(true, "Online");
+                syncKetuaRoundTracker(globalState);
+                
+                if(globalState.monViewMode !== 'list') {
+                    processFlash(globalState);
+                }
+
+                if(!document.getElementById('view-monitor').classList.contains('hidden')) {
+                    renderMonitor();
+                }
+                if(!document.getElementById('view-ketua').classList.contains('hidden')) {
+                    renderKetua();
+                }
+
+                const juriModal = document.getElementById('juri-history-modal');
+                if (juriModal && !juriModal.classList.contains('hidden')) {
+                    renderJuriHistoryModalBody();
+                }
+                
+                renderJadwal();
+                renderBracketClassSelect(); 
+                
+                if(!document.getElementById('view-statistik').classList.contains('hidden')){
+                    renderStatistik();
+                }
+                if(!document.getElementById('view-bracket').classList.contains('hidden')){
+                    renderBracketView();
+                }
+                if(!document.getElementById('view-peserta').classList.contains('hidden')){
+                    renderPeserta();
+                }
+                if(!document.getElementById('view-rekap').classList.contains('hidden')){
+                    renderRekapJuara();
+                }
+            } else {
+                updateConnectionUI(false, "Database Kosong");
+            }
+        });
+
+        // ==========================================
+        // RENDER LIVE SCORE (MOBILE FRIENDLY, KOTAK NILAI KOMPAK MASUK 1 LAYAR)
+        // ==========================================
+        const formatTime = (s) => `${Math.floor(s/60).toString().padStart(2,'0')}:${((s||0)%60).toString().padStart(2,'0')}`;
+
+        function renderMonitor() {
+            const container = document.getElementById('monitor-container');
+            const state = globalState;
+
+            if(state.monViewMode === 'list') {
+                renderLiveMatchList(container, state);
+                return;
+            }
+
+            const liveIdx = state.bertandingIdx;
+            
+            if(liveIdx < 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 px-6 bg-white rounded-2xl border border-slate-200 shadow-sm w-full max-w-md mx-auto my-auto">
+                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner">
+                            <i class="fas fa-bed text-2xl text-slate-400"></i>
+                        </div>
+                        <h2 class="text-lg font-black text-slate-800 uppercase italic">Istirahat / Menunggu</h2>
+                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Belum ada partai live</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const mb = state.matches[liveIdx];
+            let tb = calculateTotal(state, 'biru');
+            let tm = calculateTotal(state, 'merah');
+            
+            let animB = (tb !== lastScoreB) ? 'score-change' : '';
+            let animM = (tm !== lastScoreM) ? 'score-change' : '';
+            lastScoreB = tb; lastScoreM = tm;
+
+            let valB = state.biru.dis ? "DISK" : state.biru.ud ? "UD" : state.biru.wmp ? "WMP" : tb;
+            let valM = state.merah.dis ? "DISK" : state.merah.ud ? "UD" : state.merah.wmp ? "WMP" : tm;
+
+            if(mb.status === 'selesai' && mb.winnerSide) {
+                const isRed = mb.winnerSide === 'merah'; 
+                const isTie = mb.winnerSide === 'tie';
+                const bgClass = isTie ? 'bg-tie-break' : (isRed ? 'bg-sudut-merah' : 'bg-sudut-biru');
+                const winName = isTie ? 'KEPUTUSAN DEWAN' : (isRed ? mb.m : mb.b);
+                const winKont = isTie ? 'SCORE SERI' : (isRed ? mb.km : mb.kb);
+                
+                container.innerHTML = `
+                    <div class="${bgClass} text-white p-6 md:p-10 rounded-[1.5rem] md:rounded-[2rem] shadow-2xl text-center w-full max-w-2xl mx-auto my-auto flex flex-col items-center justify-center">
+                        <i class="fas fa-medal text-4xl md:text-6xl text-amber-300 mb-3 drop-shadow-lg"></i>
+                        <p class="text-[10px] md:text-xs font-black mb-1 uppercase tracking-widest opacity-80">PEMENANG PARTAI ${mb.p}</p>
+                        <h1 class="text-xl sm:text-2xl md:text-4xl font-black uppercase leading-tight mb-1 drop-shadow-md">${escapeHTML(winName)}</h1>
+                        <h2 class="text-xs md:text-sm font-bold uppercase opacity-90">${escapeHTML(winKont)}</h2>
+                        <div class="mt-5 bg-white/20 backdrop-blur-md px-5 py-2 rounded-full font-black text-xs md:text-base">
+                            SKOR AKHIR: ${valB} - ${valM}
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Indikator J1, J2, J3, Pukulan, Tendangan, Drop & Jumlah Drop di dalam Kotak Nilai
+            const getIndicatorHTML = (side) => {
+                const f = flashData[side];
+                const currentRound = state.babak || 1;
+                const roundDropCount = toArr(state[side]?.jatHistory).filter(j => Number(j?.round) === currentRound).length;
+
+                const baseClass = "flex justify-center items-center rounded font-black text-[8px] sm:text-[9px] md:text-xs transition-all duration-300";
+                const onClass = "bg-amber-400 text-black shadow-[0_0_12px_rgba(251,191,36,0.9)] scale-105 z-10";
+                const offClass = "bg-slate-200 text-slate-500";
+                
+                return `
+                    <div class="shrink-0 pt-1 mt-1 md:pt-2.5 md:mt-2 border-t border-slate-200/80 flex justify-between items-center gap-1 md:gap-2 w-full">
+                        <div class="flex gap-1 md:gap-1.5">
+                            <div class="w-5 h-5 sm:w-6 sm:h-6 md:w-9 md:h-9 ${baseClass} ${f.onj1 ? onClass : offClass}">J1</div>
+                            <div class="w-5 h-5 sm:w-6 sm:h-6 md:w-9 md:h-9 ${baseClass} ${f.onj2 ? onClass : offClass}">J2</div>
+                            <div class="w-5 h-5 sm:w-6 sm:h-6 md:w-9 md:h-9 ${baseClass} ${f.onj3 ? onClass : offClass}">J3</div>
+                        </div>
+                        <div class="flex gap-1 md:gap-1.5">
+                            <div class="w-5 h-5 sm:w-6 sm:h-6 md:w-9 md:h-9 ${baseClass} ${f.onpunch ? onClass : offClass}" title="Pukulan (1 Poin)">
+                                <i class="fas fa-hand-fist text-[9px] sm:text-[10px] md:text-sm"></i>
+                            </div>
+                            <div class="w-5 h-5 sm:w-6 sm:h-6 md:w-9 md:h-9 ${baseClass} ${f.onkick ? onClass : offClass}" title="Tendangan (2 Poin)">
+                                <i class="fas fa-shoe-prints -rotate-90 text-[9px] sm:text-[10px] md:text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="px-1.5 sm:px-2 md:px-2.5 h-5 sm:h-6 md:h-9 tracking-wider uppercase ${baseClass} ${f.ondrop ? onClass : offClass} flex items-center gap-1 md:gap-1.5">
+                            <i class="fas fa-person-falling text-[8px] sm:text-[9px] md:text-xs"></i>
+                            <span>DROP</span>
+                            <span class="${f.ondrop ? 'bg-amber-500' : 'bg-slate-300'} px-1 sm:px-1.5 py-0.5 rounded-sm text-black transition-colors flex items-center leading-none">${roundDropCount}x</span>
+                        </div>
+                    </div>
+                `;
+            };
+
+            // 3 Baris Ikon Penalti di dalam Kotak Nilai:
+            const getPenHTML = (s) => {
+                const hist = toArr(state[s].penHistory);
+                const check = (type) => type.startsWith('peringatan') ? hist.some(x => x?.type === type) : hist.some(x => x?.type === type && Number(x?.round) === state.babak);
+                const actClass = s === 'biru' ? 'active-b' : 'active-m';
+                return `
+                    <div class="flex flex-col gap-0.5 md:gap-1.5 shrink-0">
+                        <!-- Baris 1: Binaan -->
+                        <div class="flex gap-0.5 md:gap-1.5">
+                            <div class="badge-pen ${check('binaan1') ? actClass : ''}" title="Binaan 1"><i class="fas fa-hand-point-${s==='biru'?'left':'right'}"></i></div>
+                            <div class="badge-pen ${check('binaan2') ? actClass : ''}" title="Binaan 2"><i class="fas fa-hand-peace rotate-90"></i></div>
+                        </div>
+                        <!-- Baris 2: Teguran -->
+                        <div class="flex gap-0.5 md:gap-1.5">
+                            <div class="badge-pen ${check('teguran1') ? actClass : ''}" title="Teguran 1"><i class="fas fa-hand-point-up"></i></div>
+                            <div class="badge-pen ${check('teguran2') ? actClass : ''}" title="Teguran 2"><i class="fas fa-hand-peace"></i></div>
+                        </div>
+                        <!-- Baris 3: Peringatan -->
+                        <div class="flex gap-0.5 md:gap-1.5">
+                            <div class="badge-pen ${check('peringatan1') ? actClass : ''}" title="Peringatan 1">1</div>
+                            <div class="badge-pen ${check('peringatan2') ? actClass : ''}" title="Peringatan 2">2</div>
+                        </div>
+                    </div>
+                `;
+            };
+
+            container.innerHTML = `
+                <div class="w-full md:h-auto flex flex-col justify-start md:justify-center gap-1.5 md:gap-4">
+                    <!-- Top Header Live -->
+                    <div class="shrink-0 bg-white py-1 px-2.5 md:p-3.5 rounded-xl shadow-sm border border-slate-200 text-center">
+                        <h2 class="text-[10px] sm:text-xs md:text-sm font-black text-slate-800 uppercase tracking-widest leading-tight truncate">
+                            PARTAI ${mb.p} - ${escapeHTML(mb.fase)}
+                        </h2>
+                        <p class="text-[8px] sm:text-[9px] md:text-xs font-bold text-slate-500 uppercase mt-0.5 truncate">
+                            KELAS ${escapeHTML(mb.kelas)} ${escapeHTML(mb.cat)} ${escapeHTML(mb.gender || '')}
+                        </p>
+                    </div>
+                    
+                    <div class="flex flex-col md:flex-row gap-1.5 md:gap-5 items-stretch w-full">
+                        <!-- CENTER INFO (TIMER WARNA HITAM & STABIL) -->
+                        <div class="shrink-0 w-full md:w-52 lg:w-60 flex flex-row md:flex-col items-center justify-between md:justify-center bg-white py-1 px-3 md:p-6 rounded-xl md:rounded-[2rem] shadow-sm border border-slate-200 order-1 md:order-2">
+                            <div class="text-left md:text-center">
+                                <p class="text-[7px] sm:text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5 md:mb-1">TIMER</p>
+                                <div class="text-lg sm:text-xl md:text-5xl font-black font-mono tabular-nums text-black tracking-tighter leading-none min-w-[5ch]">${formatTime(state.timer)}</div>
+                            </div>
+                            <div class="w-px h-7 bg-slate-200 md:w-full md:h-px md:my-4 hidden md:block"></div>
+                            <div class="text-right md:text-center">
+                                <p class="text-[7px] sm:text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5 md:mb-2">ROUND</p>
+                                <div class="flex gap-1 sm:gap-1.5 md:gap-2 justify-end md:justify-center">
+                                    ${[1,2,3].map(r => `<div class="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 rounded-md flex items-center justify-center text-[9px] sm:text-[10px] md:text-xs font-black border-2 transition-all ${state.babak === r ? 'bg-slate-800 text-white border-slate-800 scale-105 shadow-sm' : 'bg-slate-100 text-slate-400 border-slate-200'}">${r === 1 ? 'I' : r === 2 ? 'II' : 'III'}</div>`).join('')}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SUDUT BIRU -->
+                        <div class="shrink-0 md:flex-1 min-w-0 w-full bg-white rounded-xl md:rounded-[2rem] shadow-md overflow-hidden flex flex-col order-2 md:order-1 border border-slate-200 relative">
+                            <div class="shrink-0 bg-sudut-biru text-white py-1 px-2.5 md:p-4 text-center">
+                                <h3 class="font-black text-[11px] sm:text-xs md:text-xl uppercase truncate leading-tight">${escapeHTML(mb.b)}</h3>
+                                <p class="text-[8px] sm:text-[9px] md:text-[10px] font-bold opacity-85 uppercase truncate">${escapeHTML(mb.kb)}</p>
+                            </div>
+                            <div class="flex flex-col justify-between bg-slate-50 px-2 md:px-4 py-1 md:py-3 overflow-hidden md:flex-1">
+                                <div class="min-h-[58px] md:min-h-[144px] grid grid-cols-[1fr_auto_1fr] items-center gap-1 md:flex-1">
+                                    <div class="justify-self-start">${getPenHTML('biru')}</div>
+                                    <span class="live-score-num inline-block font-black text-slate-800 text-center tabular-nums ${animB}">${valB}</span>
+                                    <div></div>
+                                </div>
+                                ${getIndicatorHTML('biru')}
+                            </div>
+                        </div>
+
+                        <!-- SUDUT MERAH -->
+                        <div class="shrink-0 md:flex-1 min-w-0 w-full bg-white rounded-xl md:rounded-[2rem] shadow-md overflow-hidden flex flex-col order-3 border border-slate-200 relative">
+                            <div class="shrink-0 bg-sudut-merah text-white py-1 px-2.5 md:p-4 text-center">
+                                <h3 class="font-black text-[11px] sm:text-xs md:text-xl uppercase truncate leading-tight">${escapeHTML(mb.m)}</h3>
+                                <p class="text-[8px] sm:text-[9px] md:text-[10px] font-bold opacity-85 uppercase truncate">${escapeHTML(mb.km)}</p>
+                            </div>
+                            <div class="flex flex-col justify-between bg-slate-50 px-2 md:px-4 py-1 md:py-3 overflow-hidden md:flex-1">
+                                <div class="min-h-[58px] md:min-h-[144px] grid grid-cols-[1fr_auto_1fr] items-center gap-1 md:flex-1">
+                                    <div></div>
+                                    <span class="live-score-num inline-block font-black text-slate-800 text-center tabular-nums ${animM}">${valM}</span>
+                                    <div class="justify-self-end">${getPenHTML('merah')}</div>
+                                </div>
+                                ${getIndicatorHTML('merah')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // KETUA PERTANDINGAN: KLASIFIKASI 5 STATUS POIN, TABEL BERGARIS J1-J3 x BABAK 1-3, TANPA DBL, POP UP RIWAYAT JURI
+        // ==========================================
+        function mapExplicitStatus(item) {
+            if (!item || typeof item !== 'object') return '';
+            const rawStatus = String(
+                item.ketuaStatus ?? item.status ?? item.color ?? item.warna ?? item.type ?? item.ket ?? ''
+            ).toLowerCase().trim();
+
+            if (rawStatus) {
+                if (rawStatus.includes('mutlak') || rawStatus === 'hijau' || rawStatus === 'green' || rawStatus === 'sah_mutlak') {
+                    return 'sah_mutlak';
+                }
+                if ((rawStatus.includes('tidak') || rawStatus.includes('invalid') || rawStatus.includes('batal')) && (rawStatus.includes('double') || rawStatus.includes('dbl'))) {
+                    return 'tidak_sah_dbl';
+                }
+                if (rawStatus === 'merah' || rawStatus === 'red') {
+                    return 'tidak_sah_dbl';
+                }
+                if (rawStatus.includes('double') || rawStatus.includes('dbl') || rawStatus === 'kuning' || rawStatus === 'yellow' || rawStatus === 'sah_double') {
+                    return 'sah_dbl';
+                }
+                if (rawStatus.includes('pendukung') || rawStatus.includes('support') || rawStatus === 'biru' || rawStatus === 'blue') {
+                    return 'pendukung';
+                }
+                if (rawStatus.includes('tidak') || rawStatus.includes('coret') || rawStatus.includes('invalid') || rawStatus.includes('batal')) {
+                    return 'tidak_sah';
+                }
+                if (rawStatus === 'sah' || rawStatus === 'valid') {
+                    return 'sah_mutlak';
+                }
+            }
+
+            if (item.valid === false || item.sah === false) return 'tidak_sah';
+            if (item.mutlak === true) return 'sah_mutlak';
+            if (item.pendukung === true) return 'pendukung';
+            if (item.double === true && item.valid === true) return 'sah_dbl';
+            if (item.double === true && item.valid === false) return 'tidak_sah_dbl';
+            return '';
+        }
+
+        function getStatusMeta(status) {
+            switch (status) {
+                case 'sah_mutlak':
+                    return { cls: 'kp-sah-mutlak', label: 'Sah Mutlak (Hijau)', short: 'Sah Mutlak' };
+                case 'sah_dbl':
+                    return { cls: 'kp-sah-dbl', label: 'Sah Double Click (Kuning)', short: 'Sah Double Click' };
+                case 'pendukung':
+                    return { cls: 'kp-pendukung', label: 'Poin Pendukung (Biru)', short: 'Poin Pendukung' };
+                case 'tidak_sah_dbl':
+                    return { cls: 'kp-tidak-sah-dbl', label: 'Tidak Sah Double Click (Merah)', short: 'Tidak Sah Dbl' };
+                default:
+                    return { cls: 'kp-tidak-sah', label: 'Tidak Sah (Dicoret)', short: 'Tidak Sah' };
+            }
+        }
+
+        function buildKetuaCornerData(state, side) {
+            const sc = state[side] || {};
+            const jKeys = ['j1', 'j2', 'j3'];
+
+            const rawLists = {};
+            jKeys.forEach(jk => {
+                const arr = toArr(sc.juri?.[jk]);
+                const list = [];
+                let filteredIdx = 0;
+                arr.forEach((rawItem) => {
+                    const val = extractNumVal(rawItem);
+                    if (val <= 0) return;
+                    const explicitR = extractExplicitRound(rawItem);
+                    const trackedR = ketuaRoundTracker[side]?.[jk]?.[filteredIdx];
+                    const round = explicitR > 0 ? explicitR : (trackedR || Math.min(3, Math.max(1, Number(state.babak) || 1)));
+                    const explicitStatus = mapExplicitStatus(rawItem);
+                    list.push({
+                        juri: jk,
+                        juriNum: Number(jk.replace('j', '')),
+                        index: filteredIdx,
+                        val,
+                        round,
+                        status: explicitStatus
+                    });
+                    filteredIdx++;
+                });
+                rawLists[jk] = list;
+            });
+
+            const byJuriByRound = {
+                j1: { 1: [], 2: [], 3: [] },
+                j2: { 1: [], 2: [], 3: [] },
+                j3: { 1: [], 2: [], 3: [] }
+            };
+            const chronologicalLog = [];
+
+            [1, 2, 3].forEach(r => {
+                const r1 = rawLists.j1.filter(x => x.round === r);
+                const r2 = rawLists.j2.filter(x => x.round === r);
+                const r3 = rawLists.j3.filter(x => x.round === r);
+                const maxLen = Math.max(r1.length, r2.length, r3.length);
+
+                for (let i = 0; i < maxLen; i++) {
+                    const items = [r1[i], r2[i], r3[i]];
+                    const active = items.filter(Boolean);
+
+                    const valCounts = {};
+                    active.forEach(it => {
+                        valCounts[it.val] = (valCounts[it.val] || 0) + 1;
+                    });
+
+                    const threeAgree = active.length === 3 && valCounts[active[0].val] === 3;
+                    const twoAgreeVal = Object.keys(valCounts).find(k => valCounts[k] === 2);
+
+                    let firstTwoAssigned = false;
+
+                    items.forEach((it, jIdx) => {
+                        if (!it) return;
+                        let finalStatus = it.status;
+
+                        if (!finalStatus) {
+                            if (threeAgree) {
+                                finalStatus = 'sah_mutlak';
+                            } else if (twoAgreeVal && String(it.val) === String(twoAgreeVal)) {
+                                if (!firstTwoAssigned) {
+                                    finalStatus = 'sah_dbl';
+                                    firstTwoAssigned = true;
+                                } else {
+                                    finalStatus = 'pendukung';
+                                }
+                            } else {
+                                const prevSameJuri = (jIdx === 0 ? r1 : jIdx === 1 ? r2 : r3)[i - 1];
+                                const prevStatus = prevSameJuri ? (byJuriByRound[it.juri][r][byJuriByRound[it.juri][r].length - 1]?.status) : '';
+                                if (prevSameJuri && prevSameJuri.val === it.val && (prevStatus === 'tidak_sah' || prevStatus === 'tidak_sah_dbl')) {
+                                    finalStatus = 'tidak_sah_dbl';
+                                } else {
+                                    finalStatus = 'tidak_sah';
+                                }
+                            }
+                        }
+
+                        const enriched = {
+                            ...it,
+                            status: finalStatus,
+                            meta: getStatusMeta(finalStatus),
+                            seqInRound: i + 1
+                        };
+                        byJuriByRound[it.juri][r].push(enriched);
+                        chronologicalLog.push(enriched);
+                    });
+                }
+            });
+
+            const juriTotals = {
+                j1: rawLists.j1.reduce((a, b) => a + b.val, 0),
+                j2: rawLists.j2.reduce((a, b) => a + b.val, 0),
+                j3: rawLists.j3.reduce((a, b) => a + b.val, 0)
+            };
+            const sortedTotals = [juriTotals.j1, juriTotals.j2, juriTotals.j3].sort((a, b) => a - b);
+            const medianScore = sortedTotals[1] || 0;
+
+            return {
+                byJuriByRound,
+                chronologicalLog,
+                juriTotals,
+                medianScore
+            };
+        }
+
+        function renderKetua() {
+            const container = document.getElementById('ketua-container');
+            const state = globalState;
+            const liveIdx = state?.bertandingIdx;
+
+            if (!state || liveIdx < 0 || state.monViewMode === 'list') {
+                container.innerHTML = `
+                    <div class="text-center py-12 px-6 bg-white rounded-2xl border border-slate-200 shadow-sm w-full max-w-md mx-auto my-12">
+                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner">
+                            <i class="fas fa-clipboard-list text-2xl text-slate-400"></i>
+                        </div>
+                        <h2 class="text-base font-black text-slate-800 uppercase italic">Ketua Pertandingan</h2>
+                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Belum ada partai yang sedang berlangsung</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const mb = state.matches[liveIdx];
+            const pMap = { teguran1: 1, teguran2: 2, peringatan1: 5, peringatan2: 10 };
+
+            const buildCornerCard = (side) => {
+                const isBlue = side === 'biru';
+                const sc = state[side] || {};
+                const nama = isBlue ? (mb.b || '-') : (mb.m || '-');
+                const kontingen = isBlue ? (mb.kb || '-') : (mb.km || '-');
+                const headerBg = isBlue ? 'bg-sudut-biru' : 'bg-sudut-merah';
+                const cornerLabel = isBlue ? 'Sudut Biru' : 'Sudut Merah';
+                const thRoundClass = isBlue ? 'bg-blue-900 text-white' : 'bg-red-900 text-white';
+
+                const data = buildKetuaCornerData(state, side);
+                const jatArr = toArr(sc.jatHistory);
+                const penArr = toArr(sc.penHistory);
+                const jatTotal = Number(sc.jat || 0);
+
+                let penTotalPts = 0;
+                penArr.forEach(p => { penTotalPts += (pMap[p?.type] || 0); });
+
+                const finalScore = sc.dis ? "DISK" : sc.ud ? "UD" : sc.wmp ? "WMP" : calculateTotal(state, side);
+
+                let medianMarked = false;
+                const juriRows = ['j1', 'j2', 'j3'].map((jk, idx) => {
+                    const totalJ = data.juriTotals[jk];
+                    const isMedian = !medianMarked && totalJ === data.medianScore;
+                    if (isMedian) medianMarked = true;
+
+                    const roundCells = [1, 2, 3].map(r => {
+                        const items = data.byJuriByRound[jk][r];
+                        const isActiveRound = Number(state.babak) === r;
+                        const cellBg = isActiveRound ? 'bg-amber-50/40' : 'bg-white';
+
+                        const chipsHTML = items.length === 0
+                            ? `<span class="text-[9px] text-slate-300 font-bold">-</span>`
+                            : `<div class="flex flex-wrap items-center justify-center gap-1">${items.map(it => `<span class="kp-chip ${it.meta.cls}" title="${escapeHTML(it.meta.label)}">${it.val}</span>`).join('')}</div>`;
+
+                        return `<td class="${cellBg} text-center">${chipsHTML}</td>`;
+                    }).join('');
+
+                    return `
+                        <tr>
+                            <td class="bg-slate-50 text-center">
+                                <div class="font-black text-[10px] md:text-xs text-slate-800 leading-tight">Juri ${idx + 1}</div>
+                                <div class="mt-0.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] md:text-[9px] font-black ${isMedian ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-200 text-slate-700'}">
+                                    ${totalJ}${isMedian ? ' • SAH' : ''}
+                                </div>
+                            </td>
+                            ${roundCells}
+                        </tr>
+                    `;
+                }).join('');
+
+                const jatuhanCells = [1, 2, 3].map(r => {
+                    const countR = jatArr.filter(j => Number(j?.round) === r).length;
+                    const ptsR = countR * 3;
+                    return `
+                        <td class="bg-emerald-50/30 text-center">
+                            ${countR > 0
+                                ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 text-[9px] md:text-[10px] font-black">${countR}x (+${ptsR})</span>`
+                                : `<span class="text-[9px] text-slate-400 font-bold">0</span>`
+                            }
+                        </td>
+                    `;
+                }).join('');
+
+                const penaltiCells = [1, 2, 3].map(r => {
+                    const penR = penArr.filter(p => Number(p?.round) === r);
+                    const tags = penR.map(p => {
+                        const t = String(p?.type || '');
+                        if (t.startsWith('binaan')) return `<span class="px-1 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300 text-[8px] font-black">${t.replace('binaan', 'B')}</span>`;
+                        if (t.startsWith('teguran')) return `<span class="px-1 py-0.5 rounded bg-orange-100 text-orange-800 border border-orange-300 text-[8px] font-black">${t.replace('teguran', 'T')}</span>`;
+                        if (t.startsWith('peringatan')) return `<span class="px-1 py-0.5 rounded bg-red-100 text-red-800 border border-red-300 text-[8px] font-black">${t.replace('peringatan', 'P')}</span>`;
+                        return '';
+                    }).filter(Boolean);
+
+                    return `
+                        <td class="bg-rose-50/30 text-center">
+                            ${tags.length > 0
+                                ? `<div class="flex flex-wrap items-center justify-center gap-0.5">${tags.join('')}</div>`
+                                : `<span class="text-[9px] text-slate-400 font-bold">0</span>`
+                            }
+                        </td>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="bg-white rounded-xl md:rounded-2xl shadow-sm border border-slate-300 overflow-hidden flex flex-col">
+                        <!-- Header Sudut + Tombol Pop Up Riwayat Juri -->
+                        <div class="${headerBg} text-white px-3 py-2 md:px-4 md:py-2.5 flex items-center justify-between gap-2">
+                            <div class="min-w-0 flex-1">
+                                <div class="text-[8px] md:text-[9px] font-bold uppercase opacity-80 tracking-widest leading-none">${cornerLabel}</div>
+                                <div class="text-xs md:text-base font-black uppercase truncate leading-tight mt-0.5">${escapeHTML(nama)}</div>
+                                <div class="text-[8px] md:text-[10px] font-semibold opacity-85 uppercase truncate leading-none mt-0.5">${escapeHTML(kontingen)}</div>
+                            </div>
+                            <div class="flex items-center gap-1.5 md:gap-2 shrink-0">
+                                <button type="button" onclick="openJuriHistoryModal('${side}')" title="Lihat Pop Up Riwayat Juri" class="bg-white/15 hover:bg-white/25 active:scale-95 border border-white/30 text-white px-2 py-1.5 md:px-2.5 md:py-1.5 rounded-lg flex items-center gap-1.5 text-[9px] md:text-[10px] font-black uppercase tracking-wider transition cursor-pointer shadow-sm">
+                                    <i class="fas fa-history text-amber-300"></i>
+                                    <span class="hidden sm:inline">Riwayat</span>
+                                </button>
+                                <div class="bg-black/25 px-2.5 py-1 md:px-3.5 md:py-1.5 rounded-lg text-center min-w-[46px] md:min-w-[62px]">
+                                    <div class="text-[6px] md:text-[8px] font-bold uppercase opacity-80 leading-none">Skor</div>
+                                    <div class="text-sm md:text-xl font-black leading-tight tabular-nums">${finalScore}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabel Bergaris Juri 1-3 x Babak 1-3 (Tanpa Kolom DBL) -->
+                        <div class="overflow-x-auto">
+                            <table class="ketua-table">
+                                <thead>
+                                    <tr>
+                                        <th class="w-[74px] sm:w-[88px] bg-slate-800 text-white text-[9px] md:text-[11px] font-black uppercase tracking-wider text-center">Juri</th>
+                                        <th class="${thRoundClass} text-[9px] md:text-[11px] font-black uppercase tracking-wider text-center ${Number(state.babak)===1 ? 'ring-2 ring-inset ring-amber-400' : ''}">Babak 1</th>
+                                        <th class="${thRoundClass} text-[9px] md:text-[11px] font-black uppercase tracking-wider text-center ${Number(state.babak)===2 ? 'ring-2 ring-inset ring-amber-400' : ''}">Babak 2</th>
+                                        <th class="${thRoundClass} text-[9px] md:text-[11px] font-black uppercase tracking-wider text-center ${Number(state.babak)===3 ? 'ring-2 ring-inset ring-amber-400' : ''}">Babak 3</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${juriRows}
+                                    <tr>
+                                        <td class="bg-emerald-50 text-center font-black text-[9px] md:text-[11px] text-emerald-800 uppercase">Jatuhan</td>
+                                        ${jatuhanCells}
+                                    </tr>
+                                    <tr>
+                                        <td class="bg-rose-50 text-center font-black text-[9px] md:text-[11px] text-rose-800 uppercase">Penalti</td>
+                                        ${penaltiCells}
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Footer Ringkasan Skor -->
+                        <div class="bg-slate-900 text-white px-3 py-1.5 flex items-center justify-between text-[8px] md:text-[10px] font-bold uppercase tracking-wider">
+                            <span>Nilai Juri Sah: <strong class="text-emerald-400">${data.medianScore}</strong></span>
+                            <span>Jatuhan: <strong class="text-sky-400">+${jatTotal}</strong></span>
+                            <span>Penalti: <strong class="text-red-400">-${penTotalPts}</strong></span>
+                            <span>Akhir: <strong class="text-amber-400">${finalScore}</strong></span>
+                        </div>
+                    </div>
+                `;
+            };
+
+            container.innerHTML = `
+                <!-- Header Partai & Tombol Riwayat Juri -->
+                <div class="bg-white px-3 py-2 md:px-4 md:py-2.5 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="bg-slate-800 text-white text-[8px] md:text-[10px] font-black px-2 py-0.5 rounded uppercase shrink-0">Ketua Pertandingan</span>
+                            <span class="text-[10px] md:text-xs font-black text-slate-800 uppercase truncate">Partai ${mb.p} - ${escapeHTML(mb.fase)}</span>
+                        </div>
+                        <p class="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase truncate mt-0.5">
+                            Kelas ${escapeHTML(mb.kelas)} ${escapeHTML(mb.cat)} ${escapeHTML(mb.gender || '')}
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button type="button" onclick="openJuriHistoryModal('biru')" class="bg-sky-600 hover:bg-sky-500 active:scale-95 text-white px-2.5 py-1.5 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition cursor-pointer">
+                            <i class="fas fa-history"></i>
+                            <span>Riwayat Juri</span>
+                        </button>
+                        <div class="flex gap-1">
+                            ${[1,2,3].map(r => `<div class="w-5 h-5 md:w-6 md:h-6 rounded flex items-center justify-center text-[8px] md:text-[10px] font-black border ${state.babak === r ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-100 text-slate-400 border-slate-200'}">${r === 1 ? 'I' : r === 2 ? 'II' : 'III'}</div>`).join('')}
+                        </div>
+                        <div class="bg-slate-100 border border-slate-200 px-2 py-1 md:px-3 md:py-1 rounded-lg text-xs md:text-base font-black font-mono tabular-nums text-black leading-none">
+                            ${formatTime(state.timer)}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Legend Status Poin Ketua Pertandingan -->
+                <div class="bg-white px-3 py-2 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[8px] sm:text-[9px] md:text-[10px] font-bold text-slate-700">
+                    <span class="inline-flex items-center gap-1"><span class="kp-chip kp-tidak-sah">1</span> Dicoret = Tidak Sah</span>
+                    <span class="inline-flex items-center gap-1"><span class="kp-chip kp-sah-mutlak">1</span> Hijau = Sah Mutlak</span>
+                    <span class="inline-flex items-center gap-1"><span class="kp-chip kp-tidak-sah-dbl">1</span> Merah = Tidak Sah Double Click</span>
+                    <span class="inline-flex items-center gap-1"><span class="kp-chip kp-sah-dbl">1</span> Kuning = Sah Double Click</span>
+                    <span class="inline-flex items-center gap-1"><span class="kp-chip kp-pendukung">1</span> Biru = Poin Pendukung</span>
+                </div>
+
+                <!-- Grid 2 Sudut: Sudut Biru & Sudut Merah -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
+                    ${buildCornerCard('biru')}
+                    ${buildCornerCard('merah')}
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // POP UP RIWAYAT JURI
+        // ==========================================
+        window.openJuriHistoryModal = function(corner = 'biru') {
+            juriModalCorner = corner === 'merah' ? 'merah' : 'biru';
+            juriModalRound = 'all';
+            const modal = document.getElementById('juri-history-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            updateJuriModalFilterButtons();
+            renderJuriHistoryModalBody();
+        };
+
+        window.closeJuriHistoryModal = function() {
+            const modal = document.getElementById('juri-history-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        window.setJuriHistoryCorner = function(corner) {
+            juriModalCorner = corner;
+            updateJuriModalFilterButtons();
+            renderJuriHistoryModalBody();
+        };
+
+        window.setJuriHistoryRound = function(round) {
+            juriModalRound = round;
+            updateJuriModalFilterButtons();
+            renderJuriHistoryModalBody();
+        };
+
+        function updateJuriModalFilterButtons() {
+            const btnBiru = document.getElementById('jmodal-corner-biru');
+            const btnMerah = document.getElementById('jmodal-corner-merah');
+            if (btnBiru && btnMerah) {
+                btnBiru.className = juriModalCorner === 'biru'
+                    ? 'px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black uppercase bg-blue-600 text-white shadow-sm transition cursor-pointer'
+                    : 'px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black uppercase bg-slate-200 text-slate-600 transition cursor-pointer';
+                btnMerah.className = juriModalCorner === 'merah'
+                    ? 'px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black uppercase bg-red-600 text-white shadow-sm transition cursor-pointer'
+                    : 'px-3 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black uppercase bg-slate-200 text-slate-600 transition cursor-pointer';
+            }
+
+            ['all', 1, 2, 3].forEach(r => {
+                const btn = document.getElementById(`jmodal-round-${r}`);
+                if (!btn) return;
+                btn.className = juriModalRound === r
+                    ? 'px-2 py-1 rounded-md text-[9px] font-black uppercase bg-slate-800 text-white transition cursor-pointer'
+                    : 'px-2 py-1 rounded-md text-[9px] font-black uppercase bg-slate-200 text-slate-600 transition cursor-pointer';
+            });
+        }
+
+        function renderJuriHistoryModalBody() {
+            const body = document.getElementById('juri-modal-body');
+            const subtitle = document.getElementById('juri-modal-subtitle');
+            const state = globalState;
+
+            if (!state || state.bertandingIdx < 0) {
+                body.innerHTML = `<div class="text-center py-10 text-slate-400 text-xs font-bold uppercase">Belum ada data pertandingan aktif</div>`;
+                return;
+            }
+
+            const mb = state.matches[state.bertandingIdx];
+            const isBlue = juriModalCorner === 'biru';
+            const nama = isBlue ? (mb.b || '-') : (mb.m || '-');
+            const kontingen = isBlue ? (mb.kb || '-') : (mb.km || '-');
+
+            if (subtitle) {
+                subtitle.innerText = `${isBlue ? 'SUDUT BIRU' : 'SUDUT MERAH'}: ${nama} (${kontingen})`;
+            }
+
+            const data = buildKetuaCornerData(state, juriModalCorner);
+            let logs = data.chronologicalLog;
+            if (juriModalRound !== 'all') {
+                logs = logs.filter(item => item.round === Number(juriModalRound));
+            }
+
+            if (logs.length === 0) {
+                body.innerHTML = `
+                    <div class="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-400">
+                        <i class="fas fa-inbox text-2xl mb-2 block"></i>
+                        <p class="text-[10px] font-black uppercase tracking-wider">Belum ada riwayat input juri${juriModalRound !== 'all' ? ' pada Babak ' + juriModalRound : ''}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const rowsHTML = logs.map((it, idx) => {
+                const teknik = it.val === 1 ? 'Pukulan (+1)' : (it.val === 2 ? 'Tendangan (+2)' : `Poin (+${it.val})`);
+                return `
+                    <tr>
+                        <td class="border border-slate-200 px-2 py-1.5 text-center font-bold text-[10px] text-slate-500">${idx + 1}</td>
+                        <td class="border border-slate-200 px-2 py-1.5 text-center font-black text-[10px] text-slate-700">Babak ${it.round}</td>
+                        <td class="border border-slate-200 px-2 py-1.5 text-center font-black text-[10px] text-slate-800">Juri ${it.juriNum}</td>
+                        <td class="border border-slate-200 px-2 py-1.5 text-center">
+                            <span class="kp-chip ${it.meta.cls}">${it.val}</span>
+                        </td>
+                        <td class="border border-slate-200 px-2 py-1.5 text-left font-bold text-[10px] text-slate-700">${teknik}</td>
+                        <td class="border border-slate-200 px-2 py-1.5 text-left font-black text-[9px] sm:text-[10px] text-slate-700">${escapeHTML(it.meta.short)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            body.innerHTML = `
+                <!-- Ringkasan Total Juri -->
+                <div class="grid grid-cols-3 gap-2 mb-3">
+                    <div class="bg-white border border-slate-200 rounded-xl p-2 text-center shadow-sm">
+                        <div class="text-[8px] font-black text-slate-400 uppercase">Juri 1</div>
+                        <div class="text-sm sm:text-base font-black text-slate-800">${data.juriTotals.j1}</div>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-2 text-center shadow-sm">
+                        <div class="text-[8px] font-black text-slate-400 uppercase">Juri 2</div>
+                        <div class="text-sm sm:text-base font-black text-slate-800">${data.juriTotals.j2}</div>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-2 text-center shadow-sm">
+                        <div class="text-[8px] font-black text-slate-400 uppercase">Juri 3</div>
+                        <div class="text-sm sm:text-base font-black text-slate-800">${data.juriTotals.j3}</div>
+                    </div>
+                </div>
+
+                <!-- Tabel Riwayat Detail -->
+                <div class="bg-white rounded-xl border border-slate-300 overflow-x-auto shadow-sm">
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr class="bg-slate-800 text-white text-[9px] font-black uppercase tracking-wider">
+                                <th class="border border-slate-700 px-2 py-2 text-center w-8">#</th>
+                                <th class="border border-slate-700 px-2 py-2 text-center">Babak</th>
+                                <th class="border border-slate-700 px-2 py-2 text-center">Juri</th>
+                                <th class="border border-slate-700 px-2 py-2 text-center">Poin</th>
+                                <th class="border border-slate-700 px-2 py-2 text-left">Teknik</th>
+                                <th class="border border-slate-700 px-2 py-2 text-left">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHTML}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // RENDER BAGAN / BRACKET (MOBILE FRIENDLY STACK + POHON HORIZONTAL)
+        // ==========================================
+        function getPhaseRank(faseStr) {
+            const f = String(faseStr || '').trim().toUpperCase();
+            if (f.includes('PENYISIHAN')) return 1;
+            if (f.includes('1/16') || f.includes('PERENAMBELAS')) return 2;
+            if (f.includes('1/8') || f.includes('PERDELAPAN')) return 3;
+            if (f.includes('1/4') || f.includes('PEREMPAT')) return 4;
+            if (f.includes('1/2') || f.includes('SEMI')) return 5;
+            if (f === 'FINAL' || (f.includes('FINAL') && !f.includes('SEMI') && !f.includes('PEREMPAT') && !f.includes('PERDELAPAN') && !f.includes('1/'))) return 6;
+            return 99;
+        }
+
+        function renderBracketClassSelect() {
+            if (!globalState || !globalState.matches) return;
+            const select = document.getElementById('bracket-class-select');
+            
+            const classSet = new Set();
+            globalState.matches.forEach(m => {
+                if (m.kelas && m.cat && (m.b || m.m)) { 
+                    const gender = m.gender || '';
+                    classSet.add(`${m.kelas} ${m.cat} ${gender}`.trim().toUpperCase());
+                }
+            });
+            
+            const uniqueClasses = Array.from(classSet).sort();
+            
+            if (select.options.length <= 1 || select.dataset.count !== String(uniqueClasses.length)) {
+                select.dataset.count = uniqueClasses.length;
+                select.innerHTML = '<option value="">Seluruh Kelas</option>';
+                
+                uniqueClasses.forEach(c => {
+                    select.innerHTML += `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`;
+                });
+                
+                select.onchange = (e) => {
+                    selectedBracketClass = e.target.value;
+                    renderBracketView();
+                };
+
+                if (uniqueClasses.length > 0 && !selectedBracketClass) {
+                    selectedBracketClass = uniqueClasses[0];
+                    select.value = selectedBracketClass;
+                } else if (selectedBracketClass) {
+                    select.value = selectedBracketClass;
+                }
+            }
+        }
+
+        function renderBracketView() {
+            const container = document.getElementById('bracket-container');
+            const scrollWrap = document.getElementById('bracket-scroll-wrap');
+            const subtitle = document.getElementById('bracket-subtitle');
+
+            if (!globalState || !globalState.matches) return;
+            
+            if (selectedBracketClass) {
+                subtitle.innerText = `KELAS ${selectedBracketClass}`;
+            } else {
+                subtitle.innerText = "ALUR PERTANDINGAN";
+            }
+
+            let filtered = globalState.matches.filter(m => m.b || m.m);
+            
+            if (selectedBracketClass) {
+                filtered = filtered.filter(m => {
+                    const gender = m.gender || '';
+                    const matchClass = `${m.kelas} ${m.cat} ${gender}`.trim().toUpperCase();
+                    return matchClass === selectedBracketClass;
+                });
+            }
+            
+            if (filtered.length === 0) {
+                scrollWrap.className = "bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-inner relative custom-scroll min-h-[50vh]";
+                container.className = "w-full";
+                container.innerHTML = `<div class="text-center w-full text-slate-400 text-[10px] py-10 font-bold uppercase tracking-widest">Data bagan kelas ${escapeHTML(selectedBracketClass || 'ini')} kosong</div>`;
+                return;
+            }
+            
+            const phases = {};
+            filtered.forEach(m => {
+                const fase = (m.fase || 'LAINNYA').toUpperCase();
+                if (!phases[fase]) phases[fase] = [];
+                phases[fase].push(m);
+            });
+            
+            const sortedPhases = Object.keys(phases).sort((a, b) => {
+                const ra = getPhaseRank(a);
+                const rb = getPhaseRank(b);
+                if (ra !== rb) return ra - rb;
+                return a.localeCompare(b);
+            });
+
+            const finalPhaseKey = sortedPhases.find(p => getPhaseRank(p) === 6);
+            const finals = finalPhaseKey ? phases[finalPhaseKey] : null;
+            const hasChampion = finals && finals.length > 0 && finals[0].status === 'selesai' && (finals[0].winnerSide === 'biru' || finals[0].winnerSide === 'merah');
+
+            if (bracketViewMode === 'stack') {
+                scrollWrap.className = "bg-slate-50 border border-slate-200 rounded-xl p-2.5 sm:p-4 shadow-inner relative";
+                container.className = "w-full space-y-4";
+
+                let html = '';
+                sortedPhases.forEach(fase => {
+                    html += `
+                        <div class="space-y-2">
+                            <div class="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest flex justify-between items-center shadow-sm">
+                                <span>${escapeHTML(fase)}</span>
+                                <span class="bg-slate-700 text-slate-200 px-2 py-0.5 rounded text-[8px]">${phases[fase].length} Partai</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                ${phases[fase].map(m => {
+                                    const isLive = globalState.bertandingIdx === (m.p - 1);
+                                    const isDone = m.status === 'selesai';
+                                    const blueLost = isDone && m.winnerSide === 'merah';
+                                    const redLost = isDone && m.winnerSide === 'biru';
+
+                                    const blueBg = blueLost ? 'bg-slate-200 text-slate-500' : 'bg-blue-600 text-white';
+                                    const blueSub = blueLost ? 'text-slate-400' : 'text-blue-100';
+                                    const redBg = redLost ? 'bg-slate-200 text-slate-500' : 'bg-red-600 text-white';
+                                    const redSub = redLost ? 'text-slate-400' : 'text-red-100';
+
+                                    const statusBadge = isLive
+                                        ? '<span class="bg-red-500 text-white px-1.5 py-0.5 rounded text-[8px] font-black animate-pulse">LIVE</span>'
+                                        : (isDone ? '<span class="bg-indigo-600 text-white px-1.5 py-0.5 rounded text-[8px] font-black">SELESAI</span>' : '<span class="bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-[8px] font-black">MENUNGGU</span>');
+
+                                    return `
+                                        <div class="bg-white rounded-xl border ${isLive ? 'border-red-400 ring-2 ring-red-400/20' : 'border-slate-200'} shadow-sm overflow-hidden">
+                                            <div class="bg-slate-100 px-2.5 py-1 border-b border-slate-200 flex justify-between items-center">
+                                                <span class="text-[9px] font-black text-slate-700 uppercase">Partai ${m.p}</span>
+                                                ${statusBadge}
+                                            </div>
+                                            <div class="p-2 space-y-1.5">
+                                                <div class="${blueBg} rounded-lg px-2.5 py-1.5 flex justify-between items-center gap-2">
+                                                    <div class="min-w-0 flex-1">
+                                                        <div class="text-[10px] font-black uppercase truncate">${isDone && m.winnerSide === 'biru' ? '<i class="fas fa-crown text-amber-300 mr-1"></i>' : ''}${escapeHTML(m.b || '???')}</div>
+                                                        <div class="text-[8px] font-bold ${blueSub} uppercase truncate">${escapeHTML(m.kb || '-')}</div>
+                                                    </div>
+                                                    <span class="font-black text-xs shrink-0 px-1.5 py-0.5 rounded bg-black/15">${isDone ? (m.totalB || 0) : '-'}</span>
+                                                </div>
+                                                <div class="${redBg} rounded-lg px-2.5 py-1.5 flex justify-between items-center gap-2">
+                                                    <div class="min-w-0 flex-1">
+                                                        <div class="text-[10px] font-black uppercase truncate">${isDone && m.winnerSide === 'merah' ? '<i class="fas fa-crown text-amber-300 mr-1"></i>' : ''}${escapeHTML(m.m || '???')}</div>
+                                                        <div class="text-[8px] font-bold ${redSub} uppercase truncate">${escapeHTML(m.km || '-')}</div>
+                                                    </div>
+                                                    <span class="font-black text-xs shrink-0 px-1.5 py-0.5 rounded bg-black/15">${isDone ? (m.totalM || 0) : '-'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                if (hasChampion) {
+                    const finalMatch = finals[0];
+                    const isBlue = finalMatch.winnerSide === 'biru';
+                    const champName = isBlue ? finalMatch.b : finalMatch.m;
+                    const champKont = isBlue ? finalMatch.kb : finalMatch.km;
+                    const bgClass = isBlue ? 'bg-sudut-biru' : 'bg-sudut-merah';
+
+                    html += `
+                        <div class="${bgClass} text-white rounded-2xl p-4 shadow-lg text-center border-2 border-amber-300">
+                            <div class="inline-flex items-center gap-1.5 bg-amber-400 text-slate-900 px-3 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest mb-2">
+                                <i class="fas fa-crown"></i> JUARA 1
+                            </div>
+                            <div class="font-black text-sm sm:text-base uppercase truncate">${escapeHTML(champName)}</div>
+                            <div class="font-bold text-[10px] uppercase opacity-90 truncate mt-0.5">${escapeHTML(champKont)}</div>
+                        </div>
+                    `;
+                }
+
+                container.innerHTML = html;
+                return;
+            }
+
+            scrollWrap.className = "overflow-x-auto overflow-y-auto bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-inner relative custom-scroll min-h-[50vh]";
+            container.className = "min-w-max flex gap-4 md:gap-8 items-center py-4";
+
+            let html = '';
+            sortedPhases.forEach((fase, index) => {
+                const isLast = index === sortedPhases.length - 1;
+                
+                html += `<div class="flex flex-col gap-3 md:gap-4">`;
+                html += `<h3 class="text-[8px] md:text-[9px] font-black text-white bg-slate-800 px-2 py-1 rounded-md text-center uppercase tracking-widest shadow-sm">${escapeHTML(fase)}</h3>`;
+                
+                phases[fase].forEach(m => {
+                    const isLive = globalState.bertandingIdx === (m.p - 1);
+                    const isDone = m.status === 'selesai';
+                    
+                    const blueLost = isDone && m.winnerSide === 'merah';
+                    const redLost = isDone && m.winnerSide === 'biru';
+
+                    const blueBg = blueLost ? 'bg-slate-200 text-slate-500' : 'bg-blue-600 text-white';
+                    const blueKontColor = blueLost ? 'text-slate-400' : 'text-blue-200';
+                    const blueScoreColor = blueLost ? 'text-slate-400' : 'text-white font-black';
+
+                    const redBg = redLost ? 'bg-slate-200 text-slate-500' : 'bg-red-600 text-white';
+                    const redKontColor = redLost ? 'text-slate-400' : 'text-red-200';
+                    const redScoreColor = redLost ? 'text-slate-400' : 'text-white font-black';
+                    
+                    const statusClass = isLive 
+                        ? 'border-red-400 shadow-md ring-1 ring-red-400' 
+                        : (isDone ? 'border-slate-300 shadow-sm opacity-90' : 'border-slate-200 shadow-sm');
+                    
+                    html += `
+                        <div class="w-40 md:w-48 bg-white border ${statusClass} rounded-lg overflow-hidden flex flex-col relative transition-all">
+                            <div class="bg-slate-100 text-[7px] md:text-[8px] font-black text-slate-600 uppercase flex justify-between items-center px-2 py-1 border-b border-slate-200">
+                                <span>Partai ${m.p}</span>
+                                ${isLive ? '<span class="text-red-600 animate-pulse bg-red-100 px-1 rounded border border-red-200 shadow-sm">LIVE</span>' : ''}
+                            </div>
+                            <div class="flex justify-between items-center px-2 py-1.5 border-b border-black/10 ${blueBg}">
+                                <div class="flex flex-col w-3/4">
+                                    <span class="truncate text-[9px] md:text-[10px] font-black">${escapeHTML(m.b || '???')}</span>
+                                    <span class="truncate text-[7px] md:text-[8px] font-bold ${blueKontColor}">${escapeHTML(m.kb || '-')}</span>
+                                </div>
+                                <span class="font-black text-[10px] md:text-xs ${blueScoreColor}">${isDone ? (m.totalB || 0) : '-'}</span>
+                            </div>
+                            <div class="flex justify-between items-center px-2 py-1.5 ${redBg}">
+                                <div class="flex flex-col w-3/4">
+                                    <span class="truncate text-[9px] md:text-[10px] font-black">${escapeHTML(m.m || '???')}</span>
+                                    <span class="truncate text-[7px] md:text-[8px] font-bold ${redKontColor}">${escapeHTML(m.km || '-')}</span>
+                                </div>
+                                <span class="font-black text-[10px] md:text-xs ${redScoreColor}">${isDone ? (m.totalM || 0) : '-'}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+                
+                if (!isLast) {
+                    html += `<div class="w-4 md:w-8 flex items-center justify-center">
+                        <i class="fas fa-chevron-right text-slate-300 text-[9px] md:text-[10px]"></i>
+                    </div>`;
+                }
+            });
+            
+            if (hasChampion) {
+                const finalMatch = finals[0];
+                const isBlue = finalMatch.winnerSide === 'biru';
+                const champName = isBlue ? finalMatch.b : finalMatch.m;
+                const champKont = isBlue ? finalMatch.kb : finalMatch.km;
+                const bgClass = isBlue ? 'bg-blue-600 border-blue-700' : 'bg-red-600 border-red-700';
+                const subColor = isBlue ? 'text-blue-200' : 'text-red-200';
+                
+                html += `<div class="w-4 md:w-8 flex items-center justify-center">
+                    <i class="fas fa-trophy text-amber-400 text-xs md:text-sm"></i>
+                </div>`;
+                
+                html += `<div class="flex flex-col justify-center">
+                    <h3 class="text-[8px] md:text-[9px] font-black text-amber-600 bg-amber-100 px-2 py-1 rounded-md text-center uppercase tracking-widest shadow-sm mb-3 border border-amber-200"><i class="fas fa-crown mr-1"></i> JUARA 1</h3>
+                    <div class="w-40 md:w-48 ${bgClass} text-white border-2 rounded-xl p-3 shadow-lg flex flex-col items-center justify-center text-center">
+                        <i class="fas fa-medal text-xl md:text-2xl text-amber-400 mb-1 drop-shadow-md"></i>
+                        <span class="font-black text-white text-[10px] md:text-xs uppercase w-full truncate">${escapeHTML(champName)}</span>
+                        <span class="font-bold ${subColor} text-[7px] md:text-[8px] uppercase mt-0.5 truncate w-full">${escapeHTML(champKont)}</span>
+                    </div>
+                </div>`;
+            }
+            
+            container.innerHTML = html;
+        }
+
+        // ==========================================
+        // RENDER STATISTIK (MOBILE FRIENDLY TABEL BERGARIS)
+        // ==========================================
+        function getMatchStats(state, sudut) {
+            const sc = state[sudut];
+            if(!sc) return { pukulan: 0, tendangan: 0, jatuhan: 0, binaan: 0, teguran: 0, peringatan: 0 };
+            
+            const countVal = (arr, val) => toArr(arr).filter(v => extractNumVal(v) === val).length;
+            
+            const p1 = countVal(sc.juri?.j1, 1);
+            const p2 = countVal(sc.juri?.j2, 1);
+            const p3 = countVal(sc.juri?.j3, 1);
+            const pukulan = [p1, p2, p3].sort((a,b) => a - b)[1] || 0;
+
+            const t1 = countVal(sc.juri?.j1, 2);
+            const t2 = countVal(sc.juri?.j2, 2);
+            const t3 = countVal(sc.juri?.j3, 2);
+            const tendangan = [t1, t2, t3].sort((a,b) => a - b)[1] || 0;
+            
+            let jatuhan = 0;
+            const jatHist = toArr(sc.jatHistory);
+            if (jatHist.length > 0) {
+                jatuhan = jatHist.length;
+            } else {
+                jatuhan = Math.floor((sc.jat || 0) / 3);
+            }
+            
+            const pen = toArr(sc.penHistory);
+            const binaan = pen.filter(x => x?.type && x.type.startsWith('binaan')).length;
+            const teguran = pen.filter(x => x?.type && x.type.startsWith('teguran')).length;
+            const peringatan = pen.filter(x => x?.type && x.type.startsWith('peringatan')).length;
+
+            return { pukulan, tendangan, jatuhan, binaan, teguran, peringatan };
+        }
+
+        function renderStatistik() {
+            const container = document.getElementById('statistik-container');
+            const state = globalState;
+            const liveIdx = state?.bertandingIdx;
+
+            if(!state || liveIdx < 0 || state.monViewMode === 'list') {
+                container.innerHTML = `
+                    <div class="text-center py-20 bg-white rounded-2xl shadow-sm border border-slate-200">
+                        <i class="fas fa-chart-pie text-3xl text-slate-300 mb-3"></i>
+                        <p class="font-bold text-slate-500 uppercase tracking-widest text-[10px]">Statistik Belum Tersedia</p>
+                        <p class="text-[8px] text-slate-400 mt-1.5">Tidak ada partai yang sedang berlangsung.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const mb = state.matches[liveIdx];
+            const statB = getMatchStats(state, 'biru');
+            const statM = getMatchStats(state, 'merah');
+            
+            const totalSeranganB = statB.pukulan + statB.tendangan + statB.jatuhan;
+            const totalSeranganM = statM.pukulan + statM.tendangan + statM.jatuhan;
+
+            const totalPenB = statB.binaan + statB.teguran + statB.peringatan;
+            const totalPenM = statM.binaan + statM.teguran + statM.peringatan;
+
+            const totalScoreB = state.biru?.dis ? "DISK" : state.biru?.ud ? "UD" : state.biru?.wmp ? "WMP" : calculateTotal(state, 'biru');
+            const totalScoreM = state.merah?.dis ? "DISK" : state.merah?.ud ? "UD" : state.merah?.wmp ? "WMP" : calculateTotal(state, 'merah');
+
+            container.innerHTML = `
+                <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden mb-4">
+                    <!-- Header Statistik -->
+                    <div class="bg-slate-900 text-white p-3 text-center">
+                        <h2 class="text-xs md:text-sm font-black uppercase tracking-widest text-amber-400">Statistik Pertandingan</h2>
+                        <p class="text-[8px] md:text-[10px] text-slate-300 font-bold uppercase mt-0.5">
+                            Partai ${mb.p} - ${escapeHTML(mb.fase)} | Kelas ${escapeHTML(mb.kelas)} ${escapeHTML(mb.cat)} ${escapeHTML(mb.gender || '')}
+                        </p>
+                    </div>
+
+                    <!-- Identitas Peserta 50/50 agar tidak terpotong di layar HP -->
+                    <div class="grid grid-cols-2 border-b border-slate-300">
+                        <div class="bg-sudut-biru text-white p-2.5 sm:p-3 border-r border-slate-300 min-w-0">
+                            <div class="text-[8px] font-bold uppercase opacity-80 tracking-wider">Sudut Biru</div>
+                            <div class="text-[11px] sm:text-xs md:text-sm font-black uppercase truncate mt-0.5">${escapeHTML(mb.b || '-')}</div>
+                            <div class="text-[8px] sm:text-[9px] font-semibold opacity-85 uppercase truncate">${escapeHTML(mb.kb || '-')}</div>
+                        </div>
+                        <div class="bg-sudut-merah text-white p-2.5 sm:p-3 text-right min-w-0">
+                            <div class="text-[8px] font-bold uppercase opacity-80 tracking-wider">Sudut Merah</div>
+                            <div class="text-[11px] sm:text-xs md:text-sm font-black uppercase truncate mt-0.5">${escapeHTML(mb.m || '-')}</div>
+                            <div class="text-[8px] sm:text-[9px] font-semibold opacity-85 uppercase truncate">${escapeHTML(mb.km || '-')}</div>
+                        </div>
+                    </div>
+
+                    <!-- Tabel Bergaris -->
+                    <div class="p-2 sm:p-3 md:p-5">
+                        <div class="overflow-hidden rounded-xl border border-slate-300 shadow-sm">
+                            <table class="stat-table text-[11px] md:text-xs">
+                                <thead>
+                                    <tr>
+                                        <th class="w-[27%] bg-blue-600 text-white text-[9px] md:text-[11px] font-black uppercase tracking-wider">Biru</th>
+                                        <th class="w-[46%] bg-slate-800 text-white uppercase tracking-wider text-[9px] md:text-[11px] font-black">Parameter</th>
+                                        <th class="w-[27%] bg-red-600 text-white text-[9px] md:text-[11px] font-black uppercase tracking-wider">Merah</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Bagian Serangan -->
+                                    <tr>
+                                        <td colspan="3" class="bg-slate-200 text-slate-700 font-black uppercase text-[9px] md:text-[10px] tracking-widest py-1.5">
+                                            Poin Serangan (Valid)
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bg-blue-50/70 text-blue-700 font-black text-xs md:text-sm">
+                                            ${statB.pukulan} <span class="block sm:inline text-[9px] font-bold text-blue-500">(+${statB.pukulan * 1})</span>
+                                        </td>
+                                        <td class="bg-white font-bold text-slate-700">Pukulan (+1 Poin)</td>
+                                        <td class="bg-red-50/70 text-red-700 font-black text-xs md:text-sm">
+                                            ${statM.pukulan} <span class="block sm:inline text-[9px] font-bold text-red-500">(+${statM.pukulan * 1})</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bg-blue-50/70 text-blue-700 font-black text-xs md:text-sm">
+                                            ${statB.tendangan} <span class="block sm:inline text-[9px] font-bold text-blue-500">(+${statB.tendangan * 2})</span>
+                                        </td>
+                                        <td class="bg-white font-bold text-slate-700">Tendangan (+2 Poin)</td>
+                                        <td class="bg-red-50/70 text-red-700 font-black text-xs md:text-sm">
+                                            ${statM.tendangan} <span class="block sm:inline text-[9px] font-bold text-red-500">(+${statM.tendangan * 2})</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bg-blue-50/70 text-blue-700 font-black text-xs md:text-sm">
+                                            ${statB.jatuhan} <span class="block sm:inline text-[9px] font-bold text-blue-500">(+${statB.jatuhan * 3})</span>
+                                        </td>
+                                        <td class="bg-white font-bold text-slate-700">Jatuhan (+3 Poin)</td>
+                                        <td class="bg-red-50/70 text-red-700 font-black text-xs md:text-sm">
+                                            ${statM.jatuhan} <span class="block sm:inline text-[9px] font-bold text-red-500">(+${statM.jatuhan * 3})</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bg-blue-100 text-blue-800 font-black text-xs md:text-sm">${totalSeranganB}x</td>
+                                        <td class="bg-slate-100 font-black text-slate-800 uppercase text-[10px] md:text-xs">Total Serangan</td>
+                                        <td class="bg-red-100 text-red-800 font-black text-xs md:text-sm">${totalSeranganM}x</td>
+                                    </tr>
+
+                                    <!-- Bagian Pelanggaran -->
+                                    <tr>
+                                        <td colspan="3" class="bg-slate-200 text-slate-700 font-black uppercase text-[9px] md:text-[10px] tracking-widest py-1.5">
+                                            Pelanggaran (Penalty)
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bg-blue-50/70 text-blue-700 font-black text-xs md:text-sm">${statB.binaan}x</td>
+                                        <td class="bg-white font-bold text-slate-700">Binaan</td>
+                                        <td class="bg-red-50/70 text-red-700 font-black text-xs md:text-sm">${statM.binaan}x</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bg-blue-50/70 text-blue-700 font-black text-xs md:text-sm">${statB.teguran}x</td>
+                                        <td class="bg-white font-bold text-slate-700">Teguran</td>
+                                        <td class="bg-red-50/70 text-red-700 font-black text-xs md:text-sm">${statM.teguran}x</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bg-blue-50/70 text-blue-700 font-black text-xs md:text-sm">${statB.peringatan}x</td>
+                                        <td class="bg-white font-bold text-slate-700">Peringatan</td>
+                                        <td class="bg-red-50/70 text-red-700 font-black text-xs md:text-sm">${statM.peringatan}x</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bg-blue-100 text-blue-800 font-black text-xs md:text-sm">${totalPenB}x</td>
+                                        <td class="bg-slate-100 font-black text-slate-800 uppercase text-[10px] md:text-xs">Total Pelanggaran</td>
+                                        <td class="bg-red-100 text-red-800 font-black text-xs md:text-sm">${totalPenM}x</td>
+                                    </tr>
+
+                                    <!-- Total Skor Akhir -->
+                                    <tr>
+                                        <td class="bg-blue-600 text-white font-black text-base md:text-xl">${totalScoreB}</td>
+                                        <td class="bg-slate-800 text-white font-black uppercase text-[10px] md:text-xs tracking-wider">Skor Akhir Dewan</td>
+                                        <td class="bg-red-600 text-white font-black text-base md:text-xl">${totalScoreM}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // LIST LIVE & HALAMAN JADWAL MOBILE-FRIENDLY
+        // ==========================================
+        function renderLiveMatchList(container, state) {
+            const list = state.matches.filter(m => m.m || m.b);
+            const bIdx = state.bertandingIdx;
+            const displayList = list.filter(m => { const realIdx = m.p - 1; return realIdx >= bIdx && realIdx <= bIdx + 4; });
+
+            container.innerHTML = `
+                <div class="w-full max-w-3xl mx-auto p-1 overflow-y-auto h-full custom-scroll">
+                    <h2 class="text-sm font-black text-slate-800 uppercase italic mb-3 text-center"><i class="fas fa-list-ul mr-1.5 text-blue-500"></i> Daftar Antrian Live</h2>
+                    <div class="space-y-2.5">
+                        ${displayList.map(m => {
+                            const isLive = (m.p - 1) === bIdx;
+                            const badge = isLive ? `<span class="bg-red-500 text-white px-2 py-0.5 rounded text-[8px] font-black animate-pulse shadow-sm">SEDANG TANDING</span>` : `<span class="bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[8px] font-black">PERSIAPAN</span>`;
+                            return `
+                                <div class="bg-white p-3 rounded-xl border-2 ${isLive ? 'border-red-300 shadow-md' : 'border-slate-100 shadow-sm'}">
+                                    <div class="flex justify-between items-center mb-2 border-b border-slate-50 pb-2">
+                                        <span class="font-black text-[10px] text-slate-800 uppercase">Partai ${m.p} - ${escapeHTML(m.fase)}</span>
+                                        ${badge}
+                                    </div>
+                                    <div class="text-[8px] font-bold text-slate-500 uppercase mb-2 text-center bg-slate-50 py-1.5 rounded inline-block w-full">KELAS ${escapeHTML(m.kelas)} ${escapeHTML(m.cat)} ${escapeHTML(m.gender || '')}</div>
+                                    <div class="flex justify-between items-center gap-2">
+                                        <div class="text-left min-w-0 flex-1"><p class="font-black text-blue-600 text-[10px] md:text-xs uppercase truncate">${escapeHTML(m.b)}</p><p class="text-[7px] font-bold text-slate-400 uppercase truncate">${escapeHTML(m.kb)}</p></div>
+                                        <div class="text-slate-300 font-black italic text-xs shrink-0 text-center">VS</div>
+                                        <div class="text-right min-w-0 flex-1"><p class="font-black text-red-600 text-[10px] md:text-xs uppercase truncate">${escapeHTML(m.m)}</p><p class="text-[7px] font-bold text-slate-400 uppercase truncate">${escapeHTML(m.km)}</p></div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // HALAMAN JADWAL MOBILE-FRIENDLY (Satu Tampilan Rapi Tanpa Geser)
+        window.renderJadwal = function() {
+            const container = document.getElementById('jadwal-container');
+            if(!globalState || !globalState.matches) return;
+
+            const allMatches = globalState.matches.filter(m => m.m || m.b);
+            document.getElementById('total-jadwal').innerText = allMatches.length;
+
+            const searchInput = document.getElementById('jadwal-search');
+            const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+            const filtered = allMatches
+                .map((m, idx) => ({ m, nomor: idx + 1 }))
+                .filter(({ m }) => {
+                    const isLive = globalState.bertandingIdx === (m.p - 1);
+                    const isDone = m.status === 'selesai';
+
+                    if (jadwalFilter === 'live' && !isLive) return false;
+                    if (jadwalFilter === 'done' && !isDone) return false;
+
+                    if (keyword) {
+                        const textPool = `${m.p} ${m.fase} ${m.b} ${m.kb} ${m.m} ${m.km} ${m.kelas} ${m.cat} ${m.gender || ''}`.toLowerCase();
+                        if (!textPool.includes(keyword)) return false;
+                    }
+                    return true;
+                });
+
+            if(filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-xl border border-slate-200 p-10 text-center text-slate-400 font-bold uppercase text-[10px]">
+                        <i class="fas fa-calendar-times text-2xl mb-2 block"></i>
+                        ${allMatches.length === 0 ? 'Belum ada jadwal' : 'Jadwal tidak ditemukan'}
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `<div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 w-full">`;
+
+            html += filtered.map(({ m, nomor }) => {
+                const isLive = globalState.bertandingIdx === (m.p - 1);
+                const isSiap = globalState.persiapanIdx === (m.p - 1);
+                const isDone = m.status === 'selesai';
+                
+                const blueLost = isDone && m.winnerSide === 'merah';
+                const redLost = isDone && m.winnerSide === 'biru';
+
+                const blueCardClass = blueLost ? 'bg-slate-200 text-slate-500' : 'bg-blue-600 text-white';
+                const redCardClass = redLost ? 'bg-slate-200 text-slate-500' : 'bg-red-600 text-white';
+                const blueScoreBadge = blueLost ? 'bg-slate-400 text-white' : 'bg-blue-600 text-white';
+                const redScoreBadge = redLost ? 'bg-slate-400 text-white' : 'bg-red-600 text-white';
+
+                let scoreB = 0;
+                let scoreM = 0;
+                if (isLive) {
+                    scoreB = calculateTotal(globalState, 'biru');
+                    scoreM = calculateTotal(globalState, 'merah');
+                } else if (isDone) {
+                    scoreB = m.totalB || 0;
+                    scoreM = m.totalM || 0;
+                }
+
+                let cardBorder = 'border-slate-200';
+                let statusBadge = `<span class="bg-slate-200 text-slate-600 text-[8px] font-black px-2 py-0.5 rounded uppercase">Menunggu</span>`;
+                if (isLive) {
+                    cardBorder = 'border-red-400 ring-2 ring-red-400/20';
+                    statusBadge = `<span class="bg-red-500 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase animate-pulse">LIVE</span>`;
+                } else if (isSiap) {
+                    cardBorder = 'border-amber-400';
+                    statusBadge = `<span class="bg-amber-500 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase">SIAP</span>`;
+                } else if (isDone) {
+                    cardBorder = 'border-indigo-200';
+                    statusBadge = `<span class="bg-indigo-600 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase">SELESAI</span>`;
+                }
+
+                const winBlueIcon = (isDone && m.winnerSide === 'biru') ? '<i class="fas fa-crown text-amber-300 mr-1"></i>' : '';
+                const winRedIcon = (isDone && m.winnerSide === 'merah') ? '<i class="fas fa-crown text-amber-300 ml-1"></i>' : '';
+
+                return `
+                    <div class="bg-white rounded-xl border-2 ${cardBorder} shadow-sm overflow-hidden w-full transition-all">
+                        <!-- Header Partai & Status -->
+                        <div class="bg-slate-50 px-3 py-1.5 border-b border-slate-100 flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-1.5 min-w-0">
+                                <span class="bg-slate-200 text-slate-700 text-[8px] font-black px-1.5 py-0.5 rounded shrink-0">#${nomor}</span>
+                                <span class="bg-slate-800 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase shrink-0">Partai ${m.p}</span>
+                                <span class="text-[9px] font-extrabold text-slate-600 uppercase truncate">${escapeHTML(m.fase || '-')}</span>
+                            </div>
+                            <div class="shrink-0">${statusBadge}</div>
+                        </div>
+
+                        <!-- Kelas & Kategori -->
+                        <div class="px-3 py-1 bg-slate-50/50 border-b border-slate-100 text-center">
+                            <span class="text-[8px] sm:text-[9px] font-bold text-slate-500 uppercase tracking-wider block truncate">
+                                Kelas ${escapeHTML(m.kelas || '-')} ${escapeHTML(m.cat || '')} ${escapeHTML(m.gender || '')}
+                            </span>
+                        </div>
+
+                        <!-- Peserta Biru - Skor - Peserta Merah -->
+                        <div class="p-2 grid grid-cols-[1fr_auto_1fr] items-stretch gap-1.5">
+                            <!-- Sudut Biru -->
+                            <div class="${blueCardClass} rounded-lg p-2 min-w-0 flex flex-col justify-center">
+                                <div class="text-[10px] sm:text-xs font-black uppercase truncate leading-tight" title="${escapeHTML(m.b || '-')}">
+                                    ${winBlueIcon}${escapeHTML(m.b || '-')}
+                                </div>
+                                <div class="text-[8px] sm:text-[9px] font-bold opacity-85 uppercase truncate mt-0.5" title="${escapeHTML(m.kb || '-')}">
+                                    ${escapeHTML(m.kb || '-')}
+                                </div>
+                            </div>
+
+                            <!-- Skor Tengah -->
+                            <div class="flex flex-col items-center justify-center px-0.5 shrink-0">
+                                <div class="flex items-center gap-1">
+                                    <span class="${blueScoreBadge} px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-xs font-black min-w-[24px] sm:min-w-[28px] text-center shadow-sm">${scoreB}</span>
+                                    <span class="text-[10px] font-black text-slate-300">-</span>
+                                    <span class="${redScoreBadge} px-1.5 sm:px-2 py-1 rounded text-[10px] sm:text-xs font-black min-w-[24px] sm:min-w-[28px] text-center shadow-sm">${scoreM}</span>
+                                </div>
+                            </div>
+
+                            <!-- Sudut Merah -->
+                            <div class="${redCardClass} rounded-lg p-2 min-w-0 flex flex-col justify-center text-right">
+                                <div class="text-[10px] sm:text-xs font-black uppercase truncate leading-tight" title="${escapeHTML(m.m || '-')}">
+                                    ${escapeHTML(m.m || '-')}${winRedIcon}
+                                </div>
+                                <div class="text-[8px] sm:text-[9px] font-bold opacity-85 uppercase truncate mt-0.5" title="${escapeHTML(m.km || '-')}">
+                                    ${escapeHTML(m.km || '-')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        // ==========================================
+        // MENU DAFTAR PESERTA (REALTIME, DIKELOMPOKKAN BERDASARKAN KETERANGAN, TABEL BERGARIS, PAGINATION 10/HALAMAN)
+        // ==========================================
+        function isPlaceholderParticipant(name) {
+            const n = String(name || '').trim();
+            if (!n) return true;
+            if (/^\?+$/.test(n)) return true;
+            if (/^-+$/.test(n)) return true;
+            if (/^bye$/i.test(n)) return true;
+            if (/^kosong$/i.test(n)) return true;
+            if (/^(pemenang|winner|menunggu)\b/i.test(n)) return true;
+            return false;
+        }
+
+        function formatPhaseLabel(faseStr) {
+            const f = String(faseStr || '').trim();
+            if (!f) return 'Lainnya';
+            return f.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        function extractParticipantsRealtime(state) {
+            if (!state || !state.matches) return [];
+            const matches = toArr(state.matches);
+            const map = new Map();
+
+            const registerEntry = (m, side) => {
+                const rawName = side === 'biru' ? m.b : m.m;
+                const rawKont = side === 'biru' ? m.kb : m.km;
+                if (isPlaceholderParticipant(rawName)) return;
+
+                const nama = String(rawName).trim();
+                const kontingen = String(rawKont || '-').trim() || '-';
+                const kelas = String(m.kelas || '').trim();
+                const cat = String(m.cat || '').trim();
+                const gender = String(m.gender || '').trim();
+                const kelasGender = [kelas ? `Kelas ${kelas}` : '', cat, gender].filter(Boolean).join(' ').trim() || '-';
+
+                const key = `${nama.toUpperCase()}||${kontingen.toUpperCase()}||${kelasGender.toUpperCase()}`;
+                if (!map.has(key)) {
+                    map.set(key, {
+                        nama,
+                        kontingen,
+                        kelasGender,
+                        records: []
+                    });
+                }
+
+                map.get(key).records.push({
+                    match: m,
+                    side,
+                    partai: Number(m.p) || 0,
+                    fase: String(m.fase || 'PENYISIHAN').trim().toUpperCase(),
+                    phaseRank: getPhaseRank(m.fase),
+                    isDone: m.status === 'selesai',
+                    winnerSide: m.winnerSide || '',
+                    isLive: state.bertandingIdx === (Number(m.p) - 1) && m.status !== 'selesai'
+                });
+            };
+
+            matches.forEach(m => {
+                if (!m) return;
+                registerEntry(m, 'biru');
+                registerEntry(m, 'merah');
+            });
+
+            const results = [];
+            map.forEach(p => {
+                p.records.sort((a, b) => {
+                    if (a.phaseRank !== b.phaseRank) return a.phaseRank - b.phaseRank;
+                    return a.partai - b.partai;
+                });
+
+                const latest = p.records[p.records.length - 1];
+                const lostLatest = latest.isDone && (
+                    (latest.side === 'biru' && latest.winnerSide === 'merah') ||
+                    (latest.side === 'merah' && latest.winnerSide === 'biru')
+                );
+                const wonLatest = latest.isDone && latest.winnerSide === latest.side;
+
+                let groupKey = '';
+                let groupTitle = '';
+                let groupOrder = 99;
+                let keterangan = '';
+                let badgeType = 'phase';
+
+                if (lostLatest) {
+                    groupKey = 'GUGUR';
+                    groupTitle = 'Peserta Gugur';
+                    groupOrder = 1;
+                    keterangan = `Gugur (${formatPhaseLabel(latest.fase)})`;
+                    badgeType = 'gugur';
+                } else if (wonLatest && latest.phaseRank === 6) {
+                    groupKey = 'JUARA_1';
+                    groupTitle = 'Peserta Juara 1';
+                    groupOrder = 90;
+                    keterangan = 'Juara 1 (Final)';
+                    badgeType = 'juara';
+                } else if (wonLatest) {
+                    groupKey = 'LOLOS_NEXT';
+                    groupTitle = 'Peserta Lolos (Menunggu Babak Berikutnya)';
+                    groupOrder = 80;
+                    keterangan = `Lolos (${formatPhaseLabel(latest.fase)})`;
+                    badgeType = 'lolos';
+                } else {
+                    const faseUpper = latest.fase || 'LAINNYA';
+                    const faseLabel = formatPhaseLabel(faseUpper);
+                    groupKey = `FASE_${faseUpper}`;
+                    groupTitle = `Peserta Fase ${faseLabel}`;
+                    groupOrder = 10 + (latest.phaseRank === 99 ? 50 : latest.phaseRank);
+                    keterangan = latest.isLive ? `${faseLabel} • LIVE` : faseLabel;
+                    badgeType = latest.isLive ? 'live' : 'phase';
+                }
+
+                results.push({
+                    nama: p.nama,
+                    kontingen: p.kontingen,
+                    kelasGender: p.kelasGender,
+                    groupKey,
+                    groupTitle,
+                    groupOrder,
+                    keterangan,
+                    badgeType,
+                    partai: latest.partai
+                });
+            });
+
+            results.sort((a, b) => {
+                if (a.groupOrder !== b.groupOrder) return a.groupOrder - b.groupOrder;
+                return a.nama.localeCompare(b.nama);
+            });
+
+            return results;
+        }
+
+        window.onPesertaSearch = function() {
+            pesertaGroupPages = {};
+            renderPeserta();
+        };
+
+        window.onPesertaGroupFilter = function() {
+            const sel = document.getElementById('peserta-group-filter');
+            selectedPesertaGroup = sel ? sel.value : 'all';
+            renderPeserta();
+        };
+
+        window.setPesertaPage = function(groupKey, pageNum) {
+            pesertaGroupPages[groupKey] = pageNum;
+            renderPeserta();
+        };
+
+        window.renderPeserta = function() {
+            const container = document.getElementById('peserta-container');
+            const totalEl = document.getElementById('total-peserta');
+            const groupFilterEl = document.getElementById('peserta-group-filter');
+
+            if (!globalState || !globalState.matches) {
+                if (totalEl) totalEl.innerText = '0';
+                container.innerHTML = `
+                    <div class="bg-white rounded-xl border border-slate-200 p-10 text-center text-slate-400 font-bold uppercase text-[10px]">
+                        <i class="fas fa-users text-2xl mb-2 block"></i>
+                        Belum ada data peserta
+                    </div>
+                `;
+                return;
+            }
+
+            const allParticipants = extractParticipantsRealtime(globalState);
+            if (totalEl) totalEl.innerText = allParticipants.length;
+
+            const allGroupsMap = new Map();
+            allParticipants.forEach(p => {
+                if (!allGroupsMap.has(p.groupKey)) {
+                    allGroupsMap.set(p.groupKey, {
+                        key: p.groupKey,
+                        title: p.groupTitle,
+                        order: p.groupOrder,
+                        count: 0
+                    });
+                }
+                allGroupsMap.get(p.groupKey).count++;
+            });
+
+            const sortedAllGroups = Array.from(allGroupsMap.values()).sort((a, b) => {
+                if (a.order !== b.order) return a.order - b.order;
+                return a.title.localeCompare(b.title);
+            });
+
+            if (groupFilterEl) {
+                const currentVal = selectedPesertaGroup;
+                groupFilterEl.innerHTML = `<option value="all">Semua Kelompok (${allParticipants.length})</option>` +
+                    sortedAllGroups.map(g => `<option value="${escapeHTML(g.key)}">${escapeHTML(g.title)} (${g.count})</option>`).join('');
+                if (currentVal !== 'all' && allGroupsMap.has(currentVal)) {
+                    groupFilterEl.value = currentVal;
+                } else {
+                    selectedPesertaGroup = 'all';
+                    groupFilterEl.value = 'all';
+                }
+            }
+
+            const searchInput = document.getElementById('peserta-search');
+            const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+            const filtered = allParticipants.filter(p => {
+                if (selectedPesertaGroup !== 'all' && p.groupKey !== selectedPesertaGroup) return false;
+                if (keyword) {
+                    const pool = `${p.nama} ${p.kontingen} ${p.kelasGender} ${p.keterangan}`.toLowerCase();
+                    if (!pool.includes(keyword)) return false;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-xl border border-slate-200 p-10 text-center text-slate-400 font-bold uppercase text-[10px]">
+                        <i class="fas fa-user-slash text-2xl mb-2 block"></i>
+                        ${allParticipants.length === 0 ? 'Belum ada peserta terdaftar pada bagan/jadwal' : 'Peserta tidak ditemukan'}
+                    </div>
+                `;
+                return;
+            }
+
+            const grouped = new Map();
+            filtered.forEach(p => {
+                if (!grouped.has(p.groupKey)) {
+                    grouped.set(p.groupKey, {
+                        key: p.groupKey,
+                        title: p.groupTitle,
+                        order: p.groupOrder,
+                        badgeType: p.badgeType,
+                        items: []
+                    });
+                }
+                grouped.get(p.groupKey).items.push(p);
+            });
+
+            const sortedGroups = Array.from(grouped.values()).sort((a, b) => {
+                if (a.order !== b.order) return a.order - b.order;
+                return a.title.localeCompare(b.title);
+            });
+
+            container.innerHTML = sortedGroups.map(group => {
+                const totalItems = group.items.length;
+                const totalPages = Math.max(1, Math.ceil(totalItems / PESERTA_PER_PAGE));
+                let curPage = pesertaGroupPages[group.key] || 1;
+                if (curPage > totalPages) curPage = totalPages;
+                if (curPage < 1) curPage = 1;
+                pesertaGroupPages[group.key] = curPage;
+
+                const startIdx = (curPage - 1) * PESERTA_PER_PAGE;
+                const pageItems = group.items.slice(startIdx, startIdx + PESERTA_PER_PAGE);
+
+                let headerBg = 'bg-slate-800 text-white';
+                let countBadge = 'bg-slate-700 text-slate-100';
+                let groupIcon = 'fa-layer-group text-sky-400';
+
+                if (group.key === 'GUGUR') {
+                    headerBg = 'bg-red-700 text-white';
+                    countBadge = 'bg-red-900/60 text-red-100';
+                    groupIcon = 'fa-user-times text-red-200';
+                } else if (group.key === 'JUARA_1') {
+                    headerBg = 'bg-amber-500 text-slate-950';
+                    countBadge = 'bg-amber-700/20 text-slate-950';
+                    groupIcon = 'fa-trophy text-slate-900';
+                } else if (group.key === 'LOLOS_NEXT') {
+                    headerBg = 'bg-emerald-700 text-white';
+                    countBadge = 'bg-emerald-900/50 text-emerald-100';
+                    groupIcon = 'fa-check-circle text-emerald-200';
+                } else if (group.key.includes('FINAL') && !group.key.includes('SEMI') && !group.key.includes('1/') && !group.key.includes('PEREMPAT') && !group.key.includes('PERDELAPAN')) {
+                    headerBg = 'bg-indigo-700 text-white';
+                    countBadge = 'bg-indigo-900/50 text-indigo-100';
+                    groupIcon = 'fa-medal text-amber-300';
+                }
+
+                const rowsHTML = pageItems.map((p, idx) => {
+                    const rowNo = startIdx + idx + 1;
+                    let ketBadgeClass = 'bg-sky-100 text-sky-800 border border-sky-200';
+                    if (p.badgeType === 'gugur') {
+                        ketBadgeClass = 'bg-red-100 text-red-700 border border-red-200';
+                    } else if (p.badgeType === 'live') {
+                        ketBadgeClass = 'bg-red-500 text-white animate-pulse shadow-sm';
+                    } else if (p.badgeType === 'lolos') {
+                        ketBadgeClass = 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+                    } else if (p.badgeType === 'juara') {
+                        ketBadgeClass = 'bg-amber-300 text-slate-950 border border-amber-400';
+                    }
+
+                    return `
+                        <tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'} hover:bg-sky-50/50 transition-colors">
+                            <td class="text-center font-black text-[10px] md:text-xs text-slate-600">${rowNo}</td>
+                            <td class="text-left font-black text-[10px] md:text-xs text-slate-800 uppercase">${escapeHTML(p.nama)}</td>
+                            <td class="text-left font-bold text-[10px] md:text-xs text-slate-600 uppercase">${escapeHTML(p.kontingen)}</td>
+                            <td class="text-left font-bold text-[9px] md:text-[11px] text-slate-700 uppercase">${escapeHTML(p.kelasGender)}</td>
+                            <td class="text-center">
+                                <span class="inline-block px-2 py-0.5 rounded-md text-[9px] md:text-[10px] font-black uppercase ${ketBadgeClass}">
+                                    ${escapeHTML(p.keterangan)}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                const encodedKey = encodeURIComponent(group.key);
+                let paginationHTML = '';
+                if (totalPages > 1) {
+                    const pageBtns = [];
+                    for (let p = 1; p <= totalPages; p++) {
+                        const activeCls = p === curPage
+                            ? 'bg-slate-800 text-white border-slate-800'
+                            : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100';
+                        pageBtns.push(`<button type="button" onclick="setPesertaPage(decodeURIComponent('${encodedKey}'), ${p})" class="w-7 h-7 rounded-lg border text-[10px] font-black transition cursor-pointer ${activeCls}">${p}</button>`);
+                    }
+
+                    paginationHTML = `
+                        <div class="px-3 py-2 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                            <span class="text-[9px] md:text-[10px] font-bold text-slate-500">
+                                Menampilkan ${startIdx + 1}–${Math.min(startIdx + PESERTA_PER_PAGE, totalItems)} dari ${totalItems} peserta
+                            </span>
+                            <div class="flex items-center gap-1 flex-wrap">
+                                <button type="button" onclick="setPesertaPage(decodeURIComponent('${encodedKey}'), ${curPage - 1})" ${curPage <= 1 ? 'disabled' : ''} class="px-2.5 h-7 rounded-lg border border-slate-300 bg-white text-[9px] font-black uppercase text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 transition cursor-pointer">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                ${pageBtns.join('')}
+                                <button type="button" onclick="setPesertaPage(decodeURIComponent('${encodedKey}'), ${curPage + 1})" ${curPage >= totalPages ? 'disabled' : ''} class="px-2.5 h-7 rounded-lg border border-slate-300 bg-white text-[9px] font-black uppercase text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 transition cursor-pointer">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    paginationHTML = `
+                        <div class="px-3 py-1.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[9px] font-bold text-slate-500">
+                            <span>Menampilkan ${totalItems} peserta</span>
+                            <span>Halaman 1 / 1</span>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="bg-white rounded-xl md:rounded-2xl shadow-sm border border-slate-300 overflow-hidden">
+                        <div class="${headerBg} px-3 py-2 md:px-4 md:py-2.5 flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <i class="fas ${groupIcon} text-xs md:text-sm shrink-0"></i>
+                                <h3 class="text-[11px] md:text-sm font-black uppercase tracking-wider truncate">${escapeHTML(group.title)}</h3>
+                            </div>
+                            <span class="${countBadge} px-2.5 py-0.5 rounded-full text-[9px] md:text-[10px] font-black shrink-0">
+                                ${totalItems} Peserta
+                            </span>
+                        </div>
+
+                        <div class="overflow-x-auto custom-scroll">
+                            <table class="peserta-table min-w-[600px]">
+                                <thead>
+                                    <tr class="bg-slate-800 text-white text-[9px] md:text-[11px] font-black uppercase tracking-wider">
+                                        <th class="w-12 text-center">No</th>
+                                        <th class="text-left">Nama Peserta</th>
+                                        <th class="text-left">Kontingen</th>
+                                        <th class="text-left">Kelas dan Gender</th>
+                                        <th class="w-40 text-center">Keterangan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${rowsHTML}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        ${paginationHTML}
+                    </div>
+                `;
+            }).join('');
+        };
+
+        // ==========================================
+        // LAPORAN REKAPITULASI JUARA (KELAS, USIA, GENDER + CETAK PDF RAPI)
+        // ==========================================
+        function getUsiaOrder(usiaStr) {
+            const u = String(usiaStr || '').toUpperCase().trim();
+            if (u.includes('PRA USIA DINI') || u.includes('PRA-USIA DINI')) return 1;
+            if (u.includes('USIA DINI')) return 2;
+            if (u.includes('PRA REMAJA') || u.includes('PRA-REMAJA')) return 3;
+            if (u.includes('REMAJA')) return 4;
+            if (u.includes('DEWASA')) return 5;
+            if (u.includes('MASTER')) return 6;
+            return 50;
+        }
+
+        function getGenderOrder(genderStr) {
+            const g = String(genderStr || '').toUpperCase().trim();
+            if (g.includes('PUTRA') || g === 'PA' || g === 'L') return 1;
+            if (g.includes('PUTRI') || g === 'PI' || g === 'P') return 2;
+            return 50;
+        }
+
+        function buildRekapJuaraData(state) {
+            if (!state || !state.matches) return [];
+            const matches = toArr(state.matches);
+            const groupMap = new Map();
+
+            matches.forEach(m => {
+                if (!m || m.status !== 'selesai') return;
+                if (m.winnerSide !== 'biru' && m.winnerSide !== 'merah') return;
+
+                const phaseRank = getPhaseRank(m.fase);
+                // Hanya proses Final (rank 6) dan Semifinal (rank 5)
+                if (phaseRank !== 6 && phaseRank !== 5) return;
+
+                const kelasRaw = String(m.kelas || '-').trim() || '-';
+                const usiaRaw = String(m.cat || '-').trim() || '-';
+                const genderRaw = String(m.gender || '-').trim() || '-';
+
+                const key = `${usiaRaw.toUpperCase()}||${kelasRaw.toUpperCase()}||${genderRaw.toUpperCase()}`;
+
+                if (!groupMap.has(key)) {
+                    groupMap.set(key, {
+                        key,
+                        kelas: kelasRaw,
+                        usia: usiaRaw,
+                        gender: genderRaw,
+                        juara1: [],
+                        juara2: [],
+                        juara3: []
+                    });
+                }
+
+                const grp = groupMap.get(key);
+                const winIsBlue = m.winnerSide === 'biru';
+
+                const winnerObj = {
+                    nama: String(winIsBlue ? (m.b || '') : (m.m || '')).trim(),
+                    kontingen: String(winIsBlue ? (m.kb || '-') : (m.km || '-')).trim() || '-',
+                    partai: m.p || '-',
+                    skor: `${m.totalB ?? 0} - ${m.totalM ?? 0}`
+                };
+
+                const loserObj = {
+                    nama: String(winIsBlue ? (m.m || '') : (m.b || '')).trim(),
+                    kontingen: String(winIsBlue ? (m.km || '-') : (m.kb || '-')).trim() || '-',
+                    partai: m.p || '-',
+                    skor: `${m.totalB ?? 0} - ${m.totalM ?? 0}`
+                };
+
+                if (phaseRank === 6) {
+                    // Pemenang Final = Juara 1
+                    if (!isPlaceholderParticipant(winnerObj.nama)) {
+                        grp.juara1.push({
+                            ...winnerObj,
+                            rank: 1,
+                            label: 'Juara 1',
+                            ket: `Pemenang Final (Partai ${winnerObj.partai})`
+                        });
+                    }
+                    // Gugur Final = Juara 2
+                    if (!isPlaceholderParticipant(loserObj.nama)) {
+                        grp.juara2.push({
+                            ...loserObj,
+                            rank: 2,
+                            label: 'Juara 2',
+                            ket: `Gugur Final (Partai ${loserObj.partai})`
+                        });
+                    }
+                } else if (phaseRank === 5) {
+                    // Gugur Semifinal = Juara 3
+                    if (!isPlaceholderParticipant(loserObj.nama)) {
+                        grp.juara3.push({
+                            ...loserObj,
+                            rank: 3,
+                            label: 'Juara 3',
+                            ket: `Gugur Semifinal (Partai ${loserObj.partai})`
+                        });
+                    }
+                }
+            });
+
+            // Filter kelompok yang minimal memiliki 1 juara dan urutkan rapi (Usia -> Kelas -> Gender)
+            const groups = Array.from(groupMap.values()).filter(g =>
+                g.juara1.length > 0 || g.juara2.length > 0 || g.juara3.length > 0
+            );
+
+            groups.sort((a, b) => {
+                const uoA = getUsiaOrder(a.usia);
+                const uoB = getUsiaOrder(b.usia);
+                if (uoA !== uoB) return uoA - uoB;
+                const uCmp = a.usia.localeCompare(b.usia);
+                if (uCmp !== 0) return uCmp;
+
+                const kCmp = a.kelas.localeCompare(b.kelas, 'id', { numeric: true });
+                if (kCmp !== 0) return kCmp;
+
+                const goA = getGenderOrder(a.gender);
+                const goB = getGenderOrder(b.gender);
+                if (goA !== goB) return goA - goB;
+                return a.gender.localeCompare(b.gender);
+            });
+
+            return groups;
+        }
+
+        window.renderRekapJuara = function() {
+            const container = document.getElementById('rekap-container');
+            const summaryEl = document.getElementById('rekap-summary');
+            const usiaSelect = document.getElementById('rekap-usia-filter');
+            const genderSelect = document.getElementById('rekap-gender-filter');
+            const printFilterInfo = document.getElementById('rekap-print-filter-info');
+
+            if (!globalState || !globalState.matches) {
+                summaryEl.innerHTML = '';
+                container.innerHTML = `
+                    <div class="bg-white rounded-xl border border-slate-200 p-10 text-center text-slate-400 font-bold uppercase text-[10px]">
+                        <i class="fas fa-award text-2xl mb-2 block"></i>
+                        Menunggu data pertandingan dari server...
+                    </div>
+                `;
+                return;
+            }
+
+            const allGroups = buildRekapJuaraData(globalState);
+
+            // Isi opsi filter Usia & Gender secara dinamis
+            const usiaSet = new Set();
+            const genderSet = new Set();
+            allGroups.forEach(g => {
+                if (g.usia && g.usia !== '-') usiaSet.add(g.usia.toUpperCase());
+                if (g.gender && g.gender !== '-') genderSet.add(g.gender.toUpperCase());
+            });
+
+            const sortedUsia = Array.from(usiaSet).sort((a, b) => {
+                const oa = getUsiaOrder(a), ob = getUsiaOrder(b);
+                return oa !== ob ? oa - ob : a.localeCompare(b);
+            });
+            const sortedGender = Array.from(genderSet).sort((a, b) => {
+                const ga = getGenderOrder(a), gb = getGenderOrder(b);
+                return ga !== gb ? ga - gb : a.localeCompare(b);
+            });
+
+            if (usiaSelect) {
+                const prevU = usiaSelect.value || 'all';
+                usiaSelect.innerHTML = `<option value="all">Semua Usia</option>` +
+                    sortedUsia.map(u => `<option value="${escapeHTML(u)}">${escapeHTML(u)}</option>`).join('');
+                usiaSelect.value = (prevU !== 'all' && usiaSet.has(prevU)) ? prevU : 'all';
+            }
+
+            if (genderSelect) {
+                const prevG = genderSelect.value || 'all';
+                genderSelect.innerHTML = `<option value="all">Semua Gender</option>` +
+                    sortedGender.map(g => `<option value="${escapeHTML(g)}">${escapeHTML(g)}</option>`).join('');
+                genderSelect.value = (prevG !== 'all' && genderSet.has(prevG)) ? prevG : 'all';
+            }
+
+            const selUsia = usiaSelect ? usiaSelect.value : 'all';
+            const selGender = genderSelect ? genderSelect.value : 'all';
+            const keyword = (document.getElementById('rekap-search')?.value || '').trim().toLowerCase();
+
+            // Terapkan filter
+            const filteredGroups = allGroups.filter(g => {
+                if (selUsia !== 'all' && g.usia.toUpperCase() !== selUsia) return false;
+                if (selGender !== 'all' && g.gender.toUpperCase() !== selGender) return false;
+
+                if (keyword) {
+                    const allChamps = [...g.juara1, ...g.juara2, ...g.juara3];
+                    const pool = `${g.kelas} ${g.usia} ${g.gender} ` +
+                        allChamps.map(c => `${c.nama} ${c.kontingen} ${c.label}`).join(' ');
+                    if (!pool.toLowerCase().includes(keyword)) return false;
+                }
+                return true;
+            });
+
+            // Hitung ringkasan total berdasarkan kelompok terfilter
+            let totalJ1 = 0, totalJ2 = 0, totalJ3 = 0;
+            filteredGroups.forEach(g => {
+                totalJ1 += g.juara1.length;
+                totalJ2 += g.juara2.length;
+                totalJ3 += g.juara3.length;
+            });
+
+            if (printFilterInfo) {
+                const parts = [];
+                if (selUsia !== 'all') parts.push(`Usia: ${selUsia}`);
+                if (selGender !== 'all') parts.push(`Gender: ${selGender}`);
+                if (keyword) parts.push(`Kata Kunci: "${keyword.toUpperCase()}"`);
+                printFilterInfo.innerText = parts.length > 0
+                    ? `Filter Aktif: ${parts.join(' | ')}`
+                    : 'Seluruh Kategori Usia, Kelas, dan Gender';
+            }
+
+            summaryEl.innerHTML = `
+                <div class="bg-white rounded-xl border border-slate-200 p-2.5 text-center shadow-sm">
+                    <div class="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-wider">Kategori / Kelas</div>
+                    <div class="text-base md:text-xl font-black text-slate-800 mt-0.5">${filteredGroups.length}</div>
+                </div>
+                <div class="bg-amber-50 rounded-xl border border-amber-300 p-2.5 text-center shadow-sm">
+                    <div class="text-[8px] md:text-[9px] font-black text-amber-700 uppercase tracking-wider">Juara 1 (Emas)</div>
+                    <div class="text-base md:text-xl font-black text-amber-600 mt-0.5">${totalJ1}</div>
+                </div>
+                <div class="bg-slate-50 rounded-xl border border-slate-300 p-2.5 text-center shadow-sm">
+                    <div class="text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-wider">Juara 2 (Perak)</div>
+                    <div class="text-base md:text-xl font-black text-slate-700 mt-0.5">${totalJ2}</div>
+                </div>
+                <div class="bg-orange-50 rounded-xl border border-orange-300 p-2.5 text-center shadow-sm">
+                    <div class="text-[8px] md:text-[9px] font-black text-orange-700 uppercase tracking-wider">Juara 3 (Perunggu)</div>
+                    <div class="text-base md:text-xl font-black text-orange-600 mt-0.5">${totalJ3}</div>
+                </div>
+            `;
+
+            if (filteredGroups.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-xl border border-slate-200 p-10 text-center text-slate-400 font-bold uppercase text-[10px]">
+                        <i class="fas fa-trophy text-2xl mb-2 block text-slate-300"></i>
+                        ${allGroups.length === 0
+                            ? 'Belum ada pertandingan Semifinal atau Final yang selesai'
+                            : 'Data juara tidak ditemukan sesuai filter/pencarian'}
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filteredGroups.map((g, gIdx) => {
+                const champions = [...g.juara1, ...g.juara2, ...g.juara3];
+
+                const rowsHTML = champions.map((c, idx) => {
+                    let badgeCls = 'bg-amber-400 text-slate-950 border border-amber-500';
+                    let rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/70';
+
+                    if (c.rank === 1) {
+                        badgeCls = 'bg-amber-400 text-slate-950 border border-amber-500';
+                        rowBg = 'bg-amber-50/40';
+                    } else if (c.rank === 2) {
+                        badgeCls = 'bg-slate-300 text-slate-900 border border-slate-400';
+                    } else if (c.rank === 3) {
+                        badgeCls = 'bg-orange-200 text-orange-950 border border-orange-300';
+                    }
+
+                    return `
+                        <tr class="${rowBg}">
+                            <td class="text-center">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] md:text-[10px] font-black uppercase ${badgeCls}">
+                                    ${c.rank === 1 ? '<i class="fas fa-crown text-[8px]"></i>' : ''}${escapeHTML(c.label)}
+                                </span>
+                            </td>
+                            <td class="text-left font-black text-[10px] md:text-xs text-slate-900 uppercase">${escapeHTML(c.nama)}</td>
+                            <td class="text-left font-bold text-[10px] md:text-xs text-slate-700 uppercase">${escapeHTML(c.kontingen)}</td>
+                            <td class="text-center font-bold text-[9px] md:text-[10px] text-slate-600 uppercase">${escapeHTML(c.ket)}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="rekap-group-card bg-white rounded-xl md:rounded-2xl shadow-sm border border-slate-300 overflow-hidden">
+                        <!-- Header Kelompok: Usia, Kelas, Gender -->
+                        <div class="bg-slate-900 text-white px-3 py-2 md:px-4 md:py-2.5 flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="bg-amber-500 text-slate-950 text-[9px] md:text-[10px] font-black px-2 py-0.5 rounded uppercase shrink-0">#${gIdx + 1}</span>
+                                <h3 class="text-[11px] md:text-sm font-black uppercase tracking-wider truncate">
+                                    USIA ${escapeHTML(g.usia)} &bull; KELAS ${escapeHTML(g.kelas)} &bull; ${escapeHTML(g.gender)}
+                                </h3>
+                            </div>
+                            <span class="bg-slate-700 text-slate-100 px-2.5 py-0.5 rounded-full text-[8px] md:text-[9px] font-black uppercase shrink-0">
+                                ${champions.length} Peraih Juara
+                            </span>
+                        </div>
+
+                        <!-- Tabel Bergaris Juara 1, 2, 3 -->
+                        <div class="rekap-overflow-wrap overflow-x-auto custom-scroll">
+                            <table class="rekap-table min-w-[520px]">
+                                <thead>
+                                    <tr class="bg-slate-800 text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider">
+                                        <th class="w-24 text-center">Peringkat</th>
+                                        <th class="text-left">Nama Atlet / Juara</th>
+                                        <th class="text-left">Kontingen</th>
+                                        <th class="w-44 text-center">Keterangan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${rowsHTML}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        window.printRekapPDF = function() {
+            const rekapView = document.getElementById('view-rekap');
+            if (rekapView && rekapView.classList.contains('hidden')) {
+                window.switchView('rekap');
+            } else if (globalState) {
+                renderRekapJuara();
+            }
+
+            const dateEl = document.getElementById('rekap-print-date');
+            if (dateEl) {
+                const now = new Date();
+                dateEl.innerText = now.toLocaleString('id-ID', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            setTimeout(() => {
+                window.print();
+            }, 150);
+        };
+
+        // Tampilkan Live Score sebagai default saat web dimuat
+        switchView('monitor');
+
+    </script>
+</body>
+</html>
